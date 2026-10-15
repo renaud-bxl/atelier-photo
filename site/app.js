@@ -36,6 +36,49 @@ export function installationCommand(os, repository) {
   return `curl --fail --location --proto '=https' --tlsv1.2 'https://github.com/${repo}/releases/latest/download/install.sh' --output install-atelier-photo.sh\nbash ./install-atelier-photo.sh --repo '${repo}'`;
 }
 
+function connectPreviewMotion() {
+  const preview = document.querySelector('.hero .preview');
+  if (!preview) return;
+  const enabled = matchMedia('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)');
+  const properties = ['--preview-rx', '--preview-ry', '--preview-x', '--preview-y'];
+  let bounds = null, frame = 0, x = 0, y = 0;
+  const reset = () => {
+    if (frame) cancelAnimationFrame(frame);
+    frame = 0; bounds = null;
+    preview.classList.remove('preview-pointer-active');
+    for (const property of properties) preview.style.removeProperty(property);
+  };
+  const move = event => {
+    if (!enabled.matches || event.pointerType !== 'mouse') return;
+    // Keep a stable hit rectangle while the card itself tilts.
+    bounds ||= preview.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return;
+    x = Math.max(-1, Math.min(1, 2 * (event.clientX - bounds.left) / bounds.width - 1));
+    y = Math.max(-1, Math.min(1, 2 * (event.clientY - bounds.top) / bounds.height - 1));
+    preview.classList.add('preview-pointer-active');
+    if (frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      if (!enabled.matches) { reset(); return; }
+      preview.style.setProperty('--preview-rx', `${(-y * 2.8).toFixed(3)}deg`);
+      preview.style.setProperty('--preview-ry', `${(x * 4).toFixed(3)}deg`);
+      preview.style.setProperty('--preview-x', `${(x * 3).toFixed(3)}px`);
+      preview.style.setProperty('--preview-y', `${(y * 3).toFixed(3)}px`);
+    });
+  };
+  preview.addEventListener('pointerenter', event => {
+    if (enabled.matches && event.pointerType === 'mouse') bounds = preview.getBoundingClientRect();
+  });
+  preview.addEventListener('pointermove', move, { passive: true });
+  preview.addEventListener('pointerleave', reset);
+  preview.addEventListener('pointercancel', reset);
+  enabled.addEventListener('change', reset);
+  window.addEventListener('blur', reset);
+  window.addEventListener('resize', reset, { passive: true });
+  window.addEventListener('scroll', reset, { passive: true });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) reset(); });
+}
+
 async function initialize() {
   const language = document.documentElement.lang || 'fr';
   const messages = JSON.parse(document.body.dataset.messages || '{}');
@@ -49,6 +92,7 @@ async function initialize() {
     destination.hash = location.hash;
     location.assign(destination.href);
   });
+  connectPreviewMotion();
   let config = { ...DEFAULT_CONFIG };
   try {
     const response = await fetch(new URL('config.json', import.meta.url), { cache: 'no-store' });
