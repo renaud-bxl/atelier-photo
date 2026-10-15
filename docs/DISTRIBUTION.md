@@ -1,6 +1,6 @@
 # Distribution d’Atelier Photo
 
-Le dépôt public [renaud-bxl/atelier-photo](https://github.com/renaud-bxl/atelier-photo), la [bêta publique 0.1.0](https://github.com/renaud-bxl/atelier-photo/releases/tag/v0.1.0) et la [page d’installation](https://renaud-bxl.github.io/atelier-photo/) sont accessibles. Les commandes utilisent les deux scripts de la release publique, qui contient huit paquets applicatifs, les sources natives Linux, ces scripts et `SHA256SUMS`, soit douze fichiers. Aucun paiement PayPal n’a été réalisé.
+Le dépôt public [renaud-bxl/atelier-photo](https://github.com/renaud-bxl/atelier-photo), la [bêta publique 0.2.0](https://github.com/renaud-bxl/atelier-photo/releases/tag/v0.2.0) et la [page d’installation](https://renaud-bxl.github.io/atelier-photo/) sont accessibles. Les commandes utilisent les deux scripts de la dernière release publique, qui contient huit paquets applicatifs, les sources natives Linux, ces scripts et `SHA256SUMS`, soit douze fichiers. Aucun paiement PayPal n’a été réalisé.
 
 ## Page de présentation et don facultatif
 
@@ -47,7 +47,7 @@ Le dépôt utilise **Pages → Build and deployment → Source → GitHub Action
 
 La page affiche maintenant les liens d’installation binaire. Le workflow Pages ne construit et ne publie aucune release de l’application.
 
-La mention Bêta décrit la maturité du logiciel et apparaît sur la page, dans ses métadonnées et dans le titre de la release 0.1.0. Cette release conserve l’alias GitHub `latest` utilisé par les installateurs existants ; cette disponibilité publique ne constitue pas une promesse de stabilité.
+La mention Bêta décrit la maturité du logiciel et apparaît sur la page, dans ses métadonnées et dans le titre de la release 0.2.0. Le numéro 0.2.0 est visible dans le badge du site, dans ses douze langues. Cette release utilise l’alias GitHub `latest` utilisé par les installateurs existants ; cette disponibilité publique ne constitue pas une promesse de stabilité.
 
 ## Installateurs
 
@@ -79,7 +79,11 @@ Aucune politique `ExecutionPolicy`, protection SmartScreen ou configuration de s
 
 Chaque job exécute `npm ci --include=optional`, prépare les runtimes natifs et vérifie Sharp/LibRaw dans Node puis Electron, lance les tests, construit l’interface et produit les paquets avec `electron-builder --publish never`. Les dépendances natives optionnelles de sharp doivent figurer dans le verrou npm ; ne pas exclure les dépendances optionnelles lors d’une installation. Les builds natives évitent de réutiliser les binaires sharp d’une autre plateforme.
 
-Un lancement manuel du workflow construit des artefacts de contrôle sans publier de release. Seul le push intentionnel d’un tag stable `vMAJEUR.MINEUR.CORRECTIF` correspondant à la version de `package.json` autorise le job final de publication. Tous les jobs doivent réussir. Le job d’assemblage ajoute `install.sh`, `install.ps1` et un `SHA256SUMS` commun aux paquets avant la création de la release. Le droit GitHub d’écriture n’est accordé qu’au job de publication.
+Un lancement manuel du workflow construit par défaut des artefacts sans publier de release. L’option explicite `publish` permet de publier ces mêmes artefacts après réussite des quatre plateformes et de l’assemblage ; le tag est alors créé sur le SHA exact du lancement. Le push intentionnel d’un tag stable `vMAJEUR.MINEUR.CORRECTIF`, correspondant à la version de `package.json`, reste également pris en charge. Le job d’assemblage ajoute `install.sh`, `install.ps1` et un `SHA256SUMS` commun aux paquets avant publication. Le droit GitHub d’écriture n’est accordé qu’au job de publication.
+
+La bêta **0.2.0** provient du [run 38792154957](https://github.com/renaud-bxl/atelier-photo/actions/runs/38792154957), sur `a4060b0760e225fe5a2f772a77f02b40029548ff`. Le contrôle supplémentaire installe réellement le runtime officiel Ollama de chaque cible dans un profil temporaire, le démarre, vérifie le service privé, l’arrête et le supprime, sans télécharger de poids. L’interface d’installation est testée séparément avec des téléchargements et inférences simulés. Les paquets finaux conservent les contrôles RAW, TIFF16, ZIP/NSIS et DEB/AppImage décrits plus bas. Voir [les modalités et limites de ces essais](MANAGED-LOCAL-AI-QA.md).
+
+Les commandes du site utilisent `releases/latest/download/install.sh` ou `install.ps1` ; ces scripts résolvent à leur tour la dernière release avant de choisir le paquet correspondant au système et à l’architecture. Aucun numéro 0.1.0 n’est figé dans le chemin de téléchargement. Après publication de 0.2.0, la redirection `latest`, les deux scripts téléchargés anonymement, les noms des douze assets et les empreintes GitHub comparées à `SHA256SUMS` sont contrôlés.
 
 La première release a été publiée en promouvant exactement l’artefact final du [run validé 38772928683](https://github.com/renaud-bxl/atelier-photo/actions/runs/38772928683), sans reconstruire les binaires. Le tag `v0.1.0` désigne son code testé `eec5b9157332812b23ddeadb760529862eb6dc6d`. Le digest SHA-256 du ZIP de cet artefact est `40bdaee8c0331da80cd7d27748725593bb60fba846247550d74e6f5284ad5e49` ; son inventaire, les onze empreintes de `SHA256SUMS` et les deux scripts identiques à ce commit ont été contrôlés avant publication.
 
