@@ -89,14 +89,15 @@ async function initialize() {
   const status = document.querySelector('#publication-status');
   const releasesLink = document.querySelector('#releases-link');
   if (repository) {
-    status.textContent = `Distribution GitHub : ${repository}`;
+    status.textContent = `Téléchargements disponibles — ${repository}`;
     status.classList.add('ready');
     releasesLink.href = `https://github.com/${repository}/releases/latest`;
     releasesLink.hidden = false;
     document.querySelectorAll('.local-hint').forEach(element => {
-      element.textContent = 'Téléchargez le script, consultez-le, puis lancez la seconde commande. Une version publiée avec SHA256SUMS doit être disponible.';
+      element.textContent = 'Téléchargez le script, consultez-le, puis lancez la seconde commande. Le téléchargement de l’application sera vérifié avec SHA-256.';
     });
-    document.querySelector('#install-details').textContent = 'Installation dans votre dossier utilisateur, sans droits administrateur. Les scripts vérifient SHA256SUMS. Les protections de votre système restent actives ; les builds doivent être validées sur chaque plateforme avant diffusion.';
+    document.querySelector('#panel-windows .local-hint').textContent += ' Si votre politique PowerShell bloque les scripts, utilisez le ZIP ou l’installateur manuel disponible ci-dessous.';
+    document.querySelector('#install-details').textContent = 'Installation dans votre dossier utilisateur, sans droits administrateur. Paquets vérifiés sur Mac Apple Silicon/Intel, Windows x64 et Ubuntu 22.04 x64. Ils ne disposent pas de signature commerciale Apple/Windows ni de notarisation Apple : les protections de votre système restent actives et peuvent bloquer leur ouverture. Les autres configurations restent à vérifier.';
   }
   for (const os of ['mac', 'windows', 'linux']) {
     document.querySelector(`#command-${os}`).textContent = installationCommand(os, repository);

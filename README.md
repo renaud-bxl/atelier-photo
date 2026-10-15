@@ -4,6 +4,10 @@ Un atelier photo local pour macOS, Windows et Linux : bibliothèque pour les gra
 
 Cette application indépendante reprend des parcours observés dans Evoto avec REA. Elle n’utilise aucun binaire, modèle propriétaire, logo, photo ni actif extrait d’Evoto. **La version 0.1 est une première implémentation fonctionnelle, pas une équivalence complète d’Evoto.** Les observations et les limites sont documentées dans [REA-FINDINGS](docs/REA-FINDINGS.md).
 
+## Installer l’application
+
+La [page d’installation](https://renaud-bxl.github.io/atelier-photo/) propose les commandes pour macOS Apple Silicon/Intel, Windows x64 et Linux x64. Le don est facultatif, avec 0 € sélectionné par défaut. Les [paquets de la version 0.1.0](https://github.com/renaud-bxl/atelier-photo/releases/tag/v0.1.0) et leurs empreintes SHA-256 permettent aussi une installation manuelle. Les paquets ne disposent pas de signature commerciale Apple/Windows ni de notarisation Apple ; les protections du système peuvent signaler ou bloquer leur ouverture.
+
 ## Lancer depuis les sources
 
 Node.js 24 ou ultérieur et npm sont nécessaires. Ouvrir un terminal dans ce dossier :
@@ -76,4 +80,4 @@ npm run package:mac
 
 La page statique est dans `site/`. Elle propose un don PayPal facultatif à Renaud avant les instructions : 0 €, 5 €, 10 €, 20 € ou un montant libre. Aucun paiement n’est exigé ni vérifié par la page.
 
-Le dépôt public est [renaud-bxl/atelier-photo](https://github.com/renaud-bxl/atelier-photo). Les commandes de téléchargement seront activées après publication des binaires vérifiés ; `site/config.json` garde jusque-là `repository: null` et la page montre les commandes de lancement depuis les sources. [DISTRIBUTION](docs/DISTRIBUTION.md) explique les installateurs et la publication. Les notices des composants et du modèle de visage sont dans [THIRD_PARTY](docs/THIRD_PARTY.md).
+Le dépôt public est [renaud-bxl/atelier-photo](https://github.com/renaud-bxl/atelier-photo). La [page d’installation](https://renaud-bxl.github.io/atelier-photo/) utilise les scripts de la dernière release stable, sans compte ni paiement requis. [DISTRIBUTION](docs/DISTRIBUTION.md) explique les installateurs, les vérifications et la publication. Les notices des composants et du modèle de visage sont dans [THIRD_PARTY](docs/THIRD_PARTY.md).
