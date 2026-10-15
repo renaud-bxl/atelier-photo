@@ -1,0 +1,12 @@
+{
+  "sha256": {
+    "face_landmarker.task": "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff",
+    "depth/model_quantized.onnx_data": "1595c419ac7d75a356c6835890f2e64fd370a38444ddfcb741ca6b6b96e1a42a",
+    "depth/model_quantized.onnx": "ed7680047cd210143f9f9c4468d049c1f19f8a7a58631d52868831376fe152c9",
+    "onnx/ort-wasm-simd-threaded.wasm": "3398c10d07d229bd91b364548e130e0e51a8e5704b88c7c083ebbeb78842dee2",
+    "onnx/ort-wasm-simd-threaded.mjs": "e13f7f94fc51b4ca72b12faeb1ee95f4ace6dfbc8939bc718aabdc0a27c4299b",
+    "wasm/vision_wasm_nosimd_internal.wasm": "c9b1b69bb87baf9e529254d8559dcbcf4c5a9c0eda84f56a12f17d675335ec9c",
+    "wasm/vision_wasm_module_internal.wasm": "3b57e4b55ac6346bf940212e3e11250b308a6a474077385e2f527b119cf74525",
+    "wasm/vision_wasm_internal.wasm": "0e101a010e262ef8e78f22e3c95b60a9705fd06962753c9acd6356d9fb56b7bd"
+  }
+}

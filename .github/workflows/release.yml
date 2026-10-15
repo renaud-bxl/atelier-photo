@@ -1,0 +1,147 @@
+name: Build and release Atelier Photo
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.id }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: mac-arm64
+            runner: macos-15
+            args: --mac dmg zip --arm64
+          - id: mac-x64
+            runner: macos-15-intel
+            args: --mac dmg zip --x64
+          - id: win-x64
+            runner: windows-2022
+            args: --win nsis zip --x64
+          - id: linux-x64
+            runner: ubuntu-22.04
+            args: --linux AppImage deb --x64
+    defaults:
+      run:
+        shell: bash
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install dependencies including platform-specific sharp packages
+        run: npm ci --include=optional
+      - name: Record reproducible source date
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
+      - name: Install Linux runtime inspection and display tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y patchelf binutils libgomp1 xvfb libgtk-3-0 libnss3 libasound2 libgbm1
+      - name: Prepare Ubuntu 22.04 libgomp, licences and exact source archives
+        if: runner.os == 'Linux'
+        run: node scripts/prepare-native.mjs --with-sources --verify-electron
+      - name: Prepare native runtimes and verify both Node and Electron
+        if: runner.os != 'Linux'
+        run: node scripts/prepare-native.mjs --verify-electron
+      - name: Verify release tag matches the application version
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node -e "const p=require('./package.json'); if(process.env.RELEASE_TAG !== 'v'+p.version) throw new Error('The release tag must match package.json version')"
+      - name: Test
+        run: npm test
+      - name: Build the interface
+        run: npm run build
+      - name: Package without publishing
+        run: npx --no-install electron-builder ${{ matrix.args }} --publish never
+      - name: Smoke test the packaged Linux backend
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/prepare-native.mjs --smoke-packaged
+      - name: Smoke test the packaged Mac or Windows backend
+        if: runner.os != 'Linux'
+        run: node scripts/prepare-native.mjs --smoke-packaged
+      - name: Archive matching Linux runtime source for redistribution
+        if: runner.os == 'Linux'
+        run: node scripts/prepare-native.mjs --archive-sources
+      - name: Preserve runtime provenance and licences for inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-provenance-${{ matrix.id }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            build/runtime/**/PROVENANCE.json
+            build/runtime/**/licenses/**
+      - name: Upload platform packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.id }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            release/AtelierPhoto-*.dmg
+            release/AtelierPhoto-*.zip
+            release/AtelierPhoto-*.exe
+            release/AtelierPhoto-*.AppImage
+            release/AtelierPhoto-*.deb
+            release/AtelierPhoto-Linux-native-sources.tar.xz
+
+  assemble:
+    name: Assemble installers and SHA-256 checksums
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: packages-*
+          merge-multiple: true
+          path: release-assets
+      - name: Include the reviewed install scripts
+        run: cp scripts/install.sh scripts/install.ps1 release-assets/
+      - name: Generate SHA256SUMS for every release asset
+        working-directory: release-assets
+        run: find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\n' | LC_ALL=C sort | xargs -d '\n' sha256sum > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installers-and-checksums
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish only for a deliberate version tag
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: assemble
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: installers-and-checksums
+          path: release-assets
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release create "$RELEASE_TAG" release-assets/* --verify-tag --title "Atelier Photo $RELEASE_TAG" --generate-notes

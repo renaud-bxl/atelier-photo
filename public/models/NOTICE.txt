@@ -1,0 +1,32 @@
+Atelier Photo - Local portrait detection components
+
+MediaPipe Tasks Vision 1.1.1
+Copyright 2023 The MediaPipe Authors.
+Licensed under the Apache License, Version 2.0.
+https://github.com/google-ai-edge/mediapipe
+
+Official Google MediaPipe Face Landmarker float16/1 model bundle:
+https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task
+
+Model components and author credits, as stated in their official model cards:
+
+BlazeFace short range:
+Valentin Bazarevsky, Google. Model card by Yury Kartynnik and Artsiom
+Ablavatski, Google. Licensed under Apache License, Version 2.0.
+https://storage.googleapis.com/mediapipe-assets/MediaPipe%20BlazeFace%20Model%20Card%20%28Short%20Range%29.pdf
+
+FaceMesh V2:
+Geng Yan and Ivan Grishchenko, Google.
+Licensed under Apache License, Version 2.0.
+https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MediaPipe%20Face%20Mesh%20V2.pdf
+
+Blendshape V2:
+Ivan Grishchenko, Geng Yan, Andrei Zanfir and Eduard Gabriel Bazavan, Google.
+Licensed under Apache License, Version 2.0.
+https://storage.googleapis.com/mediapipe-assets/Model%20Card%20Blendshape%20V2.pdf
+
+The complete Apache 2.0 license is included alongside this notice in
+LICENSE.txt. Model and runtime binaries are distributed without modification.
+Atelier Photo's region extraction and image retouching pipeline are separate
+implementations; this notice does not imply endorsement by Google or any
+model author. No Evoto code, assets or proprietary neural model is bundled.

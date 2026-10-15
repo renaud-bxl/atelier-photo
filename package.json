@@ -1,0 +1,109 @@
+{
+  "name": "atelier-photo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Atelier photo local, retouche et assistance IA avec vos propres clés.",
+  "author": "Renaud",
+  "license": "MIT",
+  "type": "module",
+  "main": "desktop/main.mjs",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "node scripts/verify-assets.mjs && vite build",
+    "start": "npm run build && electron .",
+    "test": "node --test Tests/*.test.mjs",
+    "package": "npm run build && electron-builder",
+    "package:mac": "npm run build && electron-builder --mac --dir",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "build": {
+    "appId": "com.rea.atelierphoto",
+    "productName": "Atelier Photo",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "desktop/**/*",
+      "package.json",
+      "locales/**/*",
+      "LICENSE",
+      "docs/THIRD_PARTY.md",
+      "docs/RAW.md",
+      "docs/NATIVE-RUNTIMES.md"
+    ],
+    "asarUnpack": [
+      "node_modules/sharp/**/*",
+      "node_modules/@img/**/*",
+      "node_modules/@janhapke/libraw/**/*"
+    ],
+    "artifactName": "AtelierPhoto-${version}-${os}-${arch}.${ext}",
+    "mac": {
+      "category": "public.app-category.photography",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "identity": "-"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "extraFiles": [
+        {
+          "from": "build/runtime/win32-x64",
+          "to": ".",
+          "filter": [
+            "**/*"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Graphics",
+      "maintainer": "Renaud"
+    },
+    "icon": "build/icon.png",
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1",
+        "libsecret-1-0",
+        "libgomp1"
+      ]
+    },
+    "copyright": "Copyright © 2026 Renaud"
+  },
+  "dependencies": {
+    "@janhapke/libraw": "0.1.0",
+    "sharp": "0.35.5"
+  },
+  "devDependencies": {
+    "@mediapipe/tasks-vision": "1.1.1",
+    "@playwright/test": "1.64.1",
+    "@vitejs/plugin-react": "6.1.2",
+    "electron": "44.7.2",
+    "electron-builder": "26.15.3",
+    "lucide-react": "1.57.0",
+    "onnxruntime-web": "1.30.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "vite": "8.3.4"
+  }
+}

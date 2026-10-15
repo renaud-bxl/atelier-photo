@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' atelier: blob: 'wasm-unsafe-eval'; connect-src 'self' atelier:; img-src atelier: blob: data:; worker-src 'self' blob:; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+    <title>Atelier Photo — détection locale des portraits</title>
+  </head>
+  <body>
+    <script type="module" src="/src/face-worker.js"></script>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "repository": "onnx-community/depth-anything-v2-small-ONNX",
+  "revision": "c3b67641fd837b2368757101311e5d21e511441e",
+  "license": "Apache-2.0",
+  "sha256": {
+    "model_quantized.onnx": "ed7680047cd210143f9f9c4468d049c1f19f8a7a58631d52868831376fe152c9",
+    "model_quantized.onnx_data": "1595c419ac7d75a356c6835890f2e64fd370a38444ddfcb741ca6b6b96e1a42a"
+  }
+}
