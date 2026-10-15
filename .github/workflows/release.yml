@@ -77,6 +77,12 @@ jobs:
       - name: Smoke test the packaged Mac or Windows backend
         if: runner.os != 'Linux'
         run: node scripts/prepare-native.mjs --smoke-packaged
+      - name: Exercise final Windows ZIP and installed NSIS including loaded native DLL paths
+        if: runner.os == 'Windows'
+        run: node scripts/qa-packaged.mjs
+      - name: Exercise the installed Linux DEB with the normal Chromium sandbox
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/qa-packaged.mjs
       - name: Archive matching Linux runtime source for redistribution
         if: runner.os == 'Linux'
         run: node scripts/prepare-native.mjs --archive-sources
@@ -144,4 +150,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
-        run: gh release create "$RELEASE_TAG" release-assets/* --verify-tag --title "Atelier Photo $RELEASE_TAG" --generate-notes
+        run: gh release create "$RELEASE_TAG" release-assets/* --verify-tag --title "Atelier Photo $RELEASE_TAG" --notes-file docs/RELEASE-NOTES.md

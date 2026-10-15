@@ -181,7 +181,8 @@ try {
     for (const key of ['ELECTRON_RUN_AS_NODE', 'OPENAI_API_KEY', 'GEMINI_API_KEY', 'GOOGLE_API_KEY', 'ANTHROPIC_API_KEY', 'CLAUDE_API_KEY', 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy', 'NODE_USE_ENV_PROXY']) delete env[key];
     const { _electron } = await import('playwright');
     markStage(packagedExecutable ? 'launch packaged Electron with isolated profile' : 'launch source Electron with isolated profile');
-    application = await _electron.launch({ executablePath: packagedExecutable || require('electron'), args: packagedExecutable ? [] : [root], cwd: root, env, timeout: 30_000 });
+    application = await _electron.launch({ executablePath: packagedExecutable || require('electron'), args: packagedExecutable ? [] : [root], cwd: root, env, timeout: 30_000, chromiumSandbox: true });
+    assert.equal(await application.evaluate(({ app }) => app.commandLine.hasSwitch('no-sandbox')), false, 'Local AI QA must preserve the Chromium sandbox.');
     markStage('read isolated userData path from main process');
     assert.equal(await application.evaluate(({ app }) => app.getPath('userData')), profile);
     markStage('install test-only external network guards');

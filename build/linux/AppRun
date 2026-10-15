@@ -1,0 +1,41 @@
+#!/bin/sh
+set -eu
+
+# AppImage sets APPDIR. Resolve the script too for extracted application folders.
+if [ -n "${APPDIR:-}" ]; then
+  task_app_dir=$APPDIR
+else
+  task_launcher=$0
+  case "$task_launcher" in
+    */*) ;;
+    *) task_launcher=$(command -v "$task_launcher") ;;
+  esac
+  task_links=0
+  while [ -L "$task_launcher" ]; do
+    task_links=$((task_links + 1))
+    if [ "$task_links" -gt 40 ]; then
+      printf '%s\n' 'Atelier Photo: cannot resolve the application launcher.' >&2
+      exit 127
+    fi
+    task_parent=$(CDPATH= cd -- "$(dirname -- "$task_launcher")" && pwd -P)
+    task_link=$(readlink "$task_launcher")
+    case "$task_link" in
+      /*) task_launcher=$task_link ;;
+      *) task_launcher=$task_parent/$task_link ;;
+    esac
+  done
+  task_app_dir=$(CDPATH= cd -- "$(dirname -- "$task_launcher")" && pwd -P)
+fi
+
+APPDIR=$(CDPATH= cd -- "$task_app_dir" && pwd -P)
+if [ ! -x "$APPDIR/atelier-photo" ]; then
+  printf '%s\n' 'Atelier Photo: the application executable is missing or cannot be run.' >&2
+  exit 127
+fi
+export APPDIR
+export PATH="$APPDIR:$APPDIR/usr/sbin${PATH:+:$PATH}"
+export XDG_DATA_DIRS="$APPDIR/usr/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}:/usr/share/gnome:/usr/local/share:/usr/share"
+export LD_LIBRARY_PATH="$APPDIR/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
+# Keep Electron's sandbox policy. A system that cannot support it must fail openly.
+exec "$APPDIR/atelier-photo" "$@"

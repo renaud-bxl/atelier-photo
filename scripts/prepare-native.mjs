@@ -238,7 +238,7 @@ async function packagedSmoke() {
   };
   await verifyExecutable(executable, env);
   if (process.platform === 'linux') {
-    const appImage = join(root, 'release', `AtelierPhoto-${packageJSON.version}-linux-x64.AppImage`);
+    const appImage = join(root, 'release', `AtelierPhoto-${packageJSON.version}-linux-x86_64.AppImage`);
     if (!await exists(appImage)) throw new Error('The final Linux AppImage was not produced.');
     // Official AppImage extract-and-run mode tests the delivered file without
     // requiring FUSE on the CI host. The runtime removes its temporary files.

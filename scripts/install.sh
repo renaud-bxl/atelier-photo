@@ -30,7 +30,7 @@ case "$system" in
   Linux)
     platform='linux'; extension='AppImage'
     [ "$machine" = 'x86_64' ] || fail 'Seule la version Linux x64 est préparée ; Linux ARM64 n’est pas validé.'
-    architecture='x64'
+    architecture='x86_64'
     [ -n "$destination" ] || destination="$HOME/.local/opt/atelier-photo"
     command -v sha256sum >/dev/null 2>&1 || fail 'sha256sum est nécessaire.'
     target="$destination/AtelierPhoto.AppImage"

@@ -1,6 +1,6 @@
 # Distribution d’Atelier Photo
 
-Le dépôt public [renaud-bxl/atelier-photo](https://github.com/renaud-bxl/atelier-photo) a été créé. Le dossier local `AtelierPhoto` constitue la racine prévue de ce dépôt. Lors de cette préparation, GitHub Pages n’est pas encore activé et aucune release binaire n’est disponible. Les workflows sont préparés pour les prochaines étapes ; leur présence ne prouve pas une publication ni une validation multiplateforme réussie. Aucun paiement PayPal n’a été réalisé.
+Le dépôt public [renaud-bxl/atelier-photo](https://github.com/renaud-bxl/atelier-photo) et la [page d’installation](https://renaud-bxl.github.io/atelier-photo/) sont accessibles. GitHub Pages publie le dossier `site/`. Les paquets binaires sont encore en cours de validation ; les liens d’installation binaire restent désactivés jusqu’à une release complète. Aucun paiement PayPal n’a été réalisé.
 
 ## Page de présentation et don facultatif
 
@@ -29,15 +29,15 @@ Le dépôt existe désormais, mais conserver `repository: null` jusqu’à la pu
 
 Avec un dépôt configuré, la page affiche les scripts de la dernière release ainsi qu’un lien vers cette release. Il faut donc publier les scripts **et** les binaires correspondants avant d’activer ce réglage pour éviter des liens de téléchargement inexistants. Définir le dépôt ne prouve pas qu’une version existe. Le parcours gratuit et les commandes locales restent accessibles pendant cette attente.
 
-### Publication GitHub Pages à activer plus tard
+### Publication GitHub Pages
 
-`.github/workflows/pages.yml` publiera directement le seul dossier `site/`, sans construction de l’application, installation npm, générateur de site ni clé personnelle. Il se déclenche sur les modifications de `site/**` ou de ce workflow poussées dans `main`, et peut aussi être lancé manuellement depuis `main`. Il utilise l’environnement `github-pages`, les droits `contents: read`, `pages: write` et `id-token: write`, et laisse terminer un déploiement déjà commencé.
+`.github/workflows/pages.yml` publie directement le seul dossier `site/`, sans construction de l’application, installation npm, générateur de site ni clé personnelle. Il se déclenche sur les modifications de `site/**` ou de ce workflow poussées dans `main`, et peut aussi être lancé manuellement depuis `main`. Il utilise l’environnement `github-pages`, les droits `contents: read`, `pages: write` et `id-token: write`, et laisse terminer un déploiement déjà commencé.
 
 Les références vérifiées le 15 octobre 2026 sont [`checkout@v6`](https://github.com/actions/checkout/blob/v6/action.yml), [`configure-pages@v5`](https://github.com/actions/configure-pages/blob/v5/action.yml), [`upload-pages-artifact@v4`](https://github.com/actions/upload-pages-artifact/blob/v4/action.yml) et [`deploy-pages@v5`](https://github.com/actions/deploy-pages/blob/v5/action.yml). Le workflow suit le [mécanisme officiel des workflows Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages). Il n’emploie pas de jeton d’accès personnel : GitHub fournit les autorisations temporaires du job.
 
-Après la réussite des contrôles de l’application, le propriétaire pourra ouvrir les réglages du dépôt, choisir **Pages → Build and deployment → Source → GitHub Actions**, puis lancer **Publish the Atelier Photo website** sur `main`. L’option `enablement: false` interdit au workflow d’activer Pages lui-même. Tant que Pages n’est pas configuré, une exécution s’arrêtera à cette étape sans publier de site. Aucun de ces réglages ni lancement n’a été effectué ici.
+Le dépôt utilise **Pages → Build and deployment → Source → GitHub Actions**. L’option `enablement: false` interdit au workflow d’activer Pages lui-même ; l’activation initiale a été effectuée dans les réglages du dépôt. Le [déploiement du 15 octobre 2026](https://github.com/renaud-bxl/atelier-photo/actions/runs/38767260952) a réussi après cette activation et la page a répondu en HTTPS.
 
-L’adresse de publication sera celle indiquée par le résultat du job Pages ; elle ne doit pas être présentée comme déjà accessible. Le site peut être publié avec les instructions depuis les sources pendant que `repository` reste `null`. Les liens d’installation binaire ne seront activés qu’après la première release complète. Le workflow Pages ne construit et ne publie aucune release de l’application.
+La page affiche les instructions depuis les sources pendant que `repository` reste `null`. Les liens d’installation binaire ne seront activés qu’après la première release complète. Le workflow Pages ne construit et ne publie aucune release de l’application.
 
 ## Installateurs
 
@@ -49,7 +49,7 @@ La vérification SHA-256 contrôle l’intégrité par rapport aux empreintes de
 | --- | --- | --- | --- |
 | macOS | `AtelierPhoto-VERSION-mac-ARCH.zip` | `~/Applications/Atelier Photo.app` | Apple Silicon arm64 et Intel x64 |
 | Windows | `AtelierPhoto-VERSION-win-x64.zip` | `%LOCALAPPDATA%\Programs\Atelier Photo` | x64 |
-| Linux | `AtelierPhoto-VERSION-linux-x64.AppImage` | `~/.local/opt/atelier-photo/AtelierPhoto.AppImage` | x64 |
+| Linux | `AtelierPhoto-VERSION-linux-x86_64.AppImage` | `~/.local/opt/atelier-photo/AtelierPhoto.AppImage` | x64 |
 
 ### Mac et Linux
 

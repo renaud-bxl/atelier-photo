@@ -74,7 +74,16 @@
         "deb"
       ],
       "category": "Graphics",
-      "maintainer": "Renaud"
+      "maintainer": "Renaud",
+      "extraFiles": [
+        {
+          "from": "build/linux/AppRun",
+          "to": "AppRun"
+        }
+      ]
+    },
+    "appImage": {
+      "executableArgs": []
     },
     "icon": "build/icon.png",
     "deb": {

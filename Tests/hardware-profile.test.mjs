@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { join, resolve } from 'node:path';
 import { createHardwareInspector, parseMacDisplays, parseNvidiaSMI, parseWindowsControllers, parseLinuxAMD, assessLocalModel } from '../desktop/hardware-profile.mjs';
 
 const GiB = 1024 ** 3, MiB = 1024 ** 2;
@@ -64,15 +65,17 @@ test('AMD sysfs VRAM is measured only from its explicit heap; classification and
 
 test('Mac inspector uses only fixed commands, mini privacy level, and the actual macOS product version', async () => {
   const commands = [];
+  // The mocked GPU platform does not replace the host filesystem's path API.
+  const storagePath = resolve('hardware-fixture-models');
   const inspect = createHardwareInspector(base({ platform: 'darwin', arch: 'arm64', release: () => '25.0.0', command: async (file, args, timeout) => {
     commands.push({ file, args, timeout });
     if (file === '/usr/bin/sw_vers') return '15.6.1\n';
     if (file === '/usr/sbin/system_profiler') return JSON.stringify({ SPDisplaysDataType: [{ sppci_model: 'Apple M3 Pro', spdisplays_metal: 'spdisplays_supported' }] });
     return missing();
   } }));
-  const result = await inspect({ storagePath: '/models' });
+  const result = await inspect({ storagePath });
   assert.equal(result.osVersion, '15.6.1'); assert.equal(result.gpu.kind, 'unified'); assert.equal(result.gpu.vramBytes, null);
-  assert.equal(result.cpu.name, 'Test CPU model'); assert.equal(result.cpu.cores, 8); assert.equal(result.storage.path, '/models');
+  assert.equal(result.cpu.name, 'Test CPU model'); assert.equal(result.cpu.cores, 8); assert.equal(result.storage.path, storagePath);
   assert.ok(commands.every(value => value.timeout <= 6000));
   assert.deepEqual(commands.find(value => value.file.endsWith('system_profiler')).args, ['SPDisplaysDataType', '-json', '-detailLevel', 'mini', '-timeout', '5']);
   assert.equal(commands.find(value => value.file.endsWith('sw_vers')).timeout, 2000);
@@ -83,12 +86,29 @@ test('Mac inspector uses only fixed commands, mini privacy level, and the actual
 
 test('Linux inspector reads bounded AMD sysfs fields and reports the kernel without inventing a distribution', async () => {
   const paths = [];
-  const inspect = createHardwareInspector(base({ readdir: async () => ['card0', 'card0-DP-1', 'card../escape', 'renderD128'],
-    readFile: async path => { paths.push(path); if (path.endsWith('/vendor')) return '0x1002\n'; if (path.endsWith('/mem_info_vram_total')) return String(12 * GiB); if (path.endsWith('/product_name')) return 'AMD Radeon test'; if (path.endsWith('/uevent')) return 'DRIVER=amdgpu\n'; return missing(); },
-    stat: async () => ({ isCharacterDevice: () => true }) }));
+  // Match the exact joined paths used by the module on this test runner. The
+  // real Linux branch still uses ordinary POSIX paths on a Linux machine.
+  const device = join('/sys/class/drm', 'card0', 'device');
+  const files = new Map([
+    [join(device, 'vendor'), '0x1002\n'],
+    [join(device, 'mem_info_vram_total'), String(12 * GiB)],
+    [join(device, 'product_name'), 'AMD Radeon test'],
+    [join(device, 'uevent'), 'DRIVER=amdgpu\n']
+  ]);
+  const inspect = createHardwareInspector(base({ readdir: async path => {
+    assert.equal(path, '/sys/class/drm');
+    return ['card0', 'card0-DP-1', 'card../escape', 'renderD128'];
+  }, readFile: async path => {
+    paths.push(path);
+    if (files.has(path)) return files.get(path);
+    return missing();
+  }, stat: async path => {
+    assert.equal(path, '/dev/kfd');
+    return { isCharacterDevice: () => true };
+  } }));
   const result = await inspect();
   assert.equal(result.osVersion, '6.8.0-fixture'); assert.equal(result.gpu.vramBytes, 12 * GiB); assert.equal(result.gpu.accelerationHint, 'rocm');
-  assert.ok(paths.every(path => path.startsWith('/sys/class/drm/card0/device/')));
+  assert.deepEqual([...paths].sort(), [...files.keys()].sort(), 'Only the four allowed card0 fields may be read.');
   assert.ok(paths.every(path => !/serial|unique_id/.test(path)));
 });
 
