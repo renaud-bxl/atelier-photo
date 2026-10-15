@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <radialGradient id="glow"><stop stop-color="#1e3c70" stop-opacity=".5"/><stop offset="1" stop-color="#080b10" stop-opacity="0"/></radialGradient>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#648da9"/><stop offset=".66" stop-color="#bac4c1"/><stop offset="1" stop-color="#d0c5b7"/></linearGradient>
+    <linearGradient id="water" x2="0" y2="1"><stop stop-color="#426f88"/><stop offset="1" stop-color="#213c56"/></linearGradient>
+    <linearGradient id="blue" x2="1" y2="1"><stop stop-color="#80b5ff"/><stop offset="1" stop-color="#4778ea"/></linearGradient>
+    <clipPath id="photo"><rect x="84" y="220" width="736" height="264" rx="7"/></clipPath>
+  </defs>
+  <rect width="1200" height="630" fill="#080b10"/>
+  <ellipse cx="350" cy="320" rx="660" ry="470" fill="url(#glow)"/>
+  <!-- Identical artwork to public/app-icon.svg, scaled without altering its paths. -->
+  <svg xmlns="http://www.w3.org/2000/svg" x="56" y="48" width="70" height="70" viewBox="0 0 1024 1024"><defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#233b60"/><stop offset="1" stop-color="#0d121c"/></linearGradient><linearGradient id="a" x2="0.8" y2="1"><stop stop-color="#b9d8ff"/><stop offset="1" stop-color="#4284e6"/></linearGradient></defs><rect x="26" y="26" width="972" height="972" rx="224" fill="url(#b)"/><circle cx="512" cy="512" r="326" fill="none" stroke="#7db7ff" stroke-opacity=".12" stroke-width="3"/><g fill="none" stroke="url(#a)" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"><path d="M512 234 678 330 678 519"/><path d="M753 373 753 565 589 660"/><path d="M753 651 587 747 423 652"/><path d="M512 790 346 694 346 505"/><path d="M271 651 271 459 435 364"/><path d="M271 373 437 277 601 372"/></g><circle cx="512" cy="512" r="100" fill="#111d30"/><circle cx="512" cy="512" r="52" fill="#7db7ff" opacity=".12"/></svg>
+  <g font-family="Arial, sans-serif">
+    <text x="149" y="88" fill="#f1f4fa" font-size="43" font-weight="700" letter-spacing="-1.5">atelier photo</text>
+    <text x="151" y="120" fill="#8c9ab1" font-size="19" letter-spacing="1">Renaud</text>
+    <rect x="1013" y="61" width="131" height="43" rx="21.5" fill="#172a49" stroke="#375b99"/>
+    <circle cx="1039" cy="82" r="4" fill="#80adff"/>
+    <text x="1054" y="89" fill="#a9c8ff" font-size="18" font-weight="700" letter-spacing="2">BETA</text>
+  </g>
+  <rect x="56" y="164" width="1088" height="352" rx="19" fill="#101720" stroke="#293448" stroke-width="2"/>
+  <path d="M56 207H1144M850 207V516" fill="none" stroke="#273143"/>
+  <g fill="#58677f"><circle cx="80" cy="186" r="4"/><circle cx="96" cy="186" r="4"/><circle cx="112" cy="186" r="4"/></g>
+  <text x="600" y="191" text-anchor="middle" fill="#7e8ca3" font-family="Arial, sans-serif" font-size="11" font-weight="700" letter-spacing="3">ATELIER PHOTO</text>
+  <g clip-path="url(#photo)">
+    <rect x="84" y="220" width="736" height="264" fill="url(#sky)"/>
+    <circle cx="663" cy="282" r="28" fill="#f0dcc0"/>
+    <path d="M84 368Q186 302 306 343T564 357Q702 300 820 357V484H84Z" fill="#708795"/>
+    <path d="M84 418Q249 326 424 382T820 338V484H84Z" fill="#426279"/>
+    <path d="M84 420Q226 393 347 424L462 484H84Z" fill="#243f55"/>
+    <path d="M820 409Q647 395 501 439L424 484H820Z" fill="#23435a"/>
+    <path d="M84 458Q248 425 404 445T820 428V484H84Z" fill="url(#water)"/>
+    <path d="M602 463H732M552 473H686M122 468H261" fill="none" stroke="#91b4c5" stroke-opacity=".22"/>
+    <rect x="102" y="238" width="700" height="228" fill="none" stroke="#d2dfed" stroke-opacity=".26"/>
+    <path d="M534 238V466M102 379H802" fill="none" stroke="#d2dfed" stroke-opacity=".14"/>
+  </g>
+  <g fill="#a0acc0" font-family="Arial, sans-serif" font-size="12">
+    <rect x="873" y="230" width="246" height="29" rx="6" fill="#18263a"/>
+    <path d="M885 244L889 240L893 244L889 248Z" fill="#80adff"/>
+    <path d="M909 244H1058M877 281H947M877 335H966M877 389H940" stroke="#586981" stroke-width="3" stroke-linecap="round"/>
+    <g stroke="#35445e" stroke-width="3" stroke-linecap="round"><path d="M878 305H1113M878 359H1113M878 413H1113"/></g>
+    <g fill="#8caee7" stroke="#223753" stroke-width="3"><circle cx="1034" cy="305" r="6"/><circle cx="1001" cy="359" r="6"/><circle cx="959" cy="413" r="6"/></g>
+    <g><circle cx="885" cy="453" r="7" fill="#5478aa"/><circle cx="910" cy="453" r="7" fill="#5c8ea0"/><circle cx="935" cy="453" r="7" fill="#8e9e96"/><circle cx="960" cy="453" r="7" fill="#a39da9"/><circle cx="985" cy="453" r="7" fill="#6b80ad"/></g>
+    <path d="M1012 453H1113" stroke="#35445e" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <g font-family="Arial, sans-serif" font-size="18" fill="#9aa9c0">
+    <text x="57" y="570">macOS</text><circle cx="145" cy="564" r="2" fill="#4e6281"/>
+    <text x="167" y="570">Windows</text><circle cx="272" cy="564" r="2" fill="#4e6281"/>
+    <text x="294" y="570">Linux</text>
+    <text x="1144" y="570" text-anchor="end" fill="#80adff" font-size="15">renaud-bxl.github.io/atelier-photo</text>
+  </g>
+  <rect x="56" y="601" width="1088" height="1" fill="#243047"/>
+</svg>

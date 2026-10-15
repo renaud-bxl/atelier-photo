@@ -7,6 +7,8 @@ on:
     paths:
       - 'site/**'
       - 'scripts/build-site.mjs'
+      - 'public/app-icon.svg'
+      - 'public/app-icon.png'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -48,7 +50,9 @@ jobs:
           test -s site/style.css
           test -s site/app.js
           test -s site/config.json
-          test -s site/og/atelier-photo-beta-v1.png
+          test -s site/og/atelier-photo-beta-v2.png
+          test -s public/app-icon.svg
+          test -s public/app-icon.png
       - name: Build and verify all twelve static language editions
         run: node scripts/build-site.mjs
       - name: Upload only the static website

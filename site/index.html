@@ -26,14 +26,16 @@
   <meta name="twitter:description" content="{{t:"Un atelier photo avec IA locale gratuite, sans clé API. OpenAI, Gemini et Claude restent disponibles avec vos clés. Bêta pour Mac, Windows et Linux."}}">
   <meta name="twitter:image" content="{{OG_IMAGE}}">
   <meta name="twitter:image:alt" content="{{t:"Atelier Photo Bêta pour macOS, Windows et Linux"}}">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 48 48&#x27;%3E%3Crect width=&#x27;48&#x27; height=&#x27;48&#x27; rx=&#x27;12&#x27; fill=&#x27;%23142441&#x27;/%3E%3Ctext x=&#x27;9&#x27; y=&#x27;32&#x27; font-family=&#x27;sans-serif&#x27; font-size=&#x27;26&#x27; fill=&#x27;%2380adff&#x27;%3Eap%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="{{BRAND_ICON}}">
+  <link rel="icon" type="image/png" sizes="1024x1024" href="{{BRAND_ICON_PNG}}">
+  <link rel="apple-touch-icon" href="{{BRAND_ICON_PNG}}">
   <link rel="stylesheet" href="{{ASSET_PREFIX}}style.css?v={{ASSET_VERSION}}">
   <script type="module" src="{{ASSET_PREFIX}}app.js?v={{ASSET_VERSION}}"></script>
 </head>
 <body data-language="{{LANG}}" data-messages="{{MESSAGES}}">
   <a class="skip-link" href="#soutenir">{{t:"Aller au téléchargement"}}</a>
   <header class="header wrap">
-    <a class="brand" href="#" aria-label="{{t:"Atelier Photo, accueil"}}"><span class="brand-icon" aria-hidden="true">{{t:"a"}}<span>{{t:"p"}}</span></span><span>atelier photo<span class="byline">{{t:"par Renaud"}}</span></span><span class="beta-badge">{{t:"Bêta"}} <bdi dir="ltr">0.2.0</bdi></span></a>
+    <a class="brand" href="#" aria-label="{{t:"Atelier Photo, accueil"}}"><img class="brand-icon" src="{{BRAND_ICON}}" alt="" width="42" height="42"><span>atelier photo<span class="byline">{{t:"par Renaud"}}</span></span><span class="beta-badge">{{t:"Bêta"}} <bdi dir="ltr">0.2.0</bdi></span></a>
     <nav aria-label="{{t:"Navigation principale"}}"><a href="#atelier">{{t:"L’atelier"}}</a><a href="#guide">{{t:"Mode d’emploi"}}</a><label class="site-language"><span class="visually-hidden">{{t:"Langue du site"}}</span><select id="site-language" aria-label="{{t:"Langue du site"}}">{{LANGUAGE_OPTIONS}}</select></label><noscript><nav class="language-fallback" aria-label='{{t:"Langue du site"}}'>{{LANGUAGE_LINKS}}</nav></noscript><a href="#soutenir" class="nav-download">{{t:"Obtenir l’application"}} <span aria-hidden="true">↗</span></a></nav>
   </header>
 
@@ -97,7 +99,7 @@ npm start</code></pre></div></div>
       </div>
     </section>
   </main>
-  <footer class="footer wrap"><a class="brand" href="#"><span class="brand-icon" aria-hidden="true">{{t:"a"}}<span>{{t:"p"}}</span></span><span>atelier photo</span></a><p>{{t:"Fait avec soin, par Renaud."}}</p><span>{{t:"Vos photos. Vos choix."}}</span></footer>
+  <footer class="footer wrap"><a class="brand" href="#"><img class="brand-icon" src="{{BRAND_ICON}}" alt="" width="42" height="42"><span>atelier photo</span></a><p>{{t:"Fait avec soin, par Renaud."}}</p><span>{{t:"Vos photos. Vos choix."}}</span></footer>
   <noscript><div class="noscript wrap">{{t:"Les dons sont facultatifs."}} <a href="https://github.com/renaud-bxl/atelier-photo/releases/latest">{{t:"Téléchargez les installateurs et leurs empreintes SHA-256 sur GitHub."}}</a> {{t:"JavaScript permet d’afficher le guide interactif par système."}}</div></noscript>
 </body>
 </html>
