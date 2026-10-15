@@ -6,6 +6,7 @@ import {join,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
 import {_electron} from 'playwright';
+import {expect} from '@playwright/test';
 
 const root=dirname(dirname(fileURLToPath(import.meta.url))),require=createRequire(import.meta.url);
 const profile=await mkdtemp(join(tmpdir(),'atelier-managed-ui-'));
@@ -70,8 +71,7 @@ try{
   const initial=await application.evaluate(()=>globalThis.__managedUIQA.calls.map(call=>call.name));
   assert.ok(initial.includes('localEngineStatus'));assert.ok(!initial.some(name=>['localEngineInstall','localPull','localHardware','localBenchmark','localEngineStart'].includes(name)));
   await dialog.getByRole('button',{name:'Vérifier cet ordinateur',exact:true}).click();
-  await install().waitFor();
-  assert.equal(await install().isEnabled(),true);
+  await expect(install()).toBeEnabled();
   await install().click();
   await dialog.getByRole('progressbar',{name:'Téléchargement du moteur…',exact:true}).waitFor();
   await dialog.getByRole('button',{name:'Fermer',exact:true}).click();

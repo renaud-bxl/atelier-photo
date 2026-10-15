@@ -238,8 +238,10 @@ test('wrong version, child error/exit and startup cancellation never publish a r
     {spawn:()=>{const child=new EventEmitter();child.pid=43210;child.exitCode=null;queueMicrotask(()=>{child.exitCode=1;child.emit('exit',1,null);});return child;}}
   ];
   for(const dependencies of setups){const f=await fixture(t,{dependencies});await f.manager.install();await assert.rejects(f.manager.start(),error=>!error.message.includes('private'));assert.equal((await f.manager.status()).running,false);assert.equal(f.calls.terminated.length,1);}
-  const controller=new AbortController(),f=await fixture(t,{dependencies:{ownsPort:async()=>false,startupTimeoutMs:1000}});await f.manager.install();
-  const pending=f.manager.start({signal:controller.signal});setTimeout(()=>controller.abort(),10);await assert.rejects(pending,{name:'AbortError'});assert.equal(f.calls.terminated.length,1);assert.equal((await f.manager.status()).endpoint,'');
+  let launched;const began=new Promise(resolve=>{launched=resolve;});
+  const controller=new AbortController(),f=await fixture(t,{dependencies:{ownsPort:async()=>{launched();return false;},startupTimeoutMs:1000}});await f.manager.install();
+  const pending=f.manager.start({signal:controller.signal});const rejected=assert.rejects(pending,{name:'AbortError'});
+  await began;controller.abort();await rejected;assert.equal(f.calls.terminated.length,1);assert.equal((await f.manager.status()).endpoint,'');
 });
 
 test('stop while starting cancels the start and terminates the owned child once',async t=>{
