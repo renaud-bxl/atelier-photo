@@ -621,5 +621,6 @@
   "Le modèle local n’a pas renvoyé de réglages valides.": "Le modèle local n’a pas renvoyé de réglages valides.",
   "Mémoire libre mesurée": "Mémoire libre mesurée",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.",
-  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté."
+  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.",
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé."
 }

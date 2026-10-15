@@ -135,7 +135,7 @@ export function SettingsModal({ onClose, onSaved, notify }) {
           {messages[provider.id] && <p role={messages[provider.id].error ? 'alert' : 'status'} className={messages[provider.id].error ? 'error' : ''} style={{ margin: '9px 0 0', fontSize: 11, color: messages[provider.id].error ? '#ff9999' : blue }}>{messages[provider.id].text}</p>}
         </div>)}
       </section>
-      <div style={{ display: 'flex', gap: 10, padding: 15, background: '#7db7ff09', borderRadius: 10, color: '#969da9', fontSize: 12, lineHeight: 1.6 }}><ShieldCheck size={19} color={blue} style={{ flexShrink: 0, marginTop: 2 }} /><div>{settings.encryptedStorage ? 'Vos clés sont chiffrées par le système sur cet appareil.' : 'Les clés restent en mémoire pour cette session. Vous devrez les ressaisir au prochain lancement.'}<br />Une photo est transmise au fournisseur choisi uniquement lorsque vous lancez explicitement une action IA.</div></div></>}
+      <div style={{ display: 'flex', gap: 10, padding: 15, background: '#7db7ff09', borderRadius: 10, color: '#969da9', fontSize: 12, lineHeight: 1.6 }}><ShieldCheck size={19} color={blue} style={{ flexShrink: 0, marginTop: 2 }} /><div>{settings.encryptedStorage === null ? 'Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.' : settings.encryptedStorage ? 'Vos clés sont chiffrées par le système sur cet appareil.' : 'Les clés restent en mémoire pour cette session. Vous devrez les ressaisir au prochain lancement.'}<br />Une photo est transmise au fournisseur choisi uniquement lorsque vous lancez explicitement une action IA.</div></div></>}
     </div>}
   </ModalFrame>;
 }

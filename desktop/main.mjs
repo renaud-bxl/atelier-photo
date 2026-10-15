@@ -21,7 +21,7 @@ if (isTest) app.setPath('userData', process.env.ATELIER_TEST_DATA);
 app.setName('Atelier Photo');
 protocol.registerSchemesAsPrivileged([{ scheme: 'atelier', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
 sharp.cache({ memory: 64, files: 16, items: 80 }); sharp.concurrency(2);
-let window, faceWindow, catalog, settings = {}, vault = {};
+let window, faceWindow, catalog, settings = {}, vault = {}, encryptedCapability = null;
 let job = null, aiController = null, localPullController = null;
 const localDiagnostics=createLocalDiagnostics();
 const faceCache = new Map(), faceRequests = new Map(), pendingFaces = new Map();
@@ -57,13 +57,13 @@ function updatePhoto(id, patch) {
 
 async function readJSON(path, fallback) { try { return JSON.parse(await fs.readFile(path, 'utf8')); } catch { return fallback; } }
 async function atomicJSON(path, data) { const temp = `${path}.${randomUUID()}.tmp`; try { await fs.writeFile(temp, JSON.stringify(data), { mode: 0o600, flag: 'wx' }); await fs.rename(temp, path); } finally { await fs.rm(temp, { force: true }).catch(() => {}); } }
-function encryptionAvailable() { return safeStorage.isEncryptionAvailable() && !(process.platform === 'linux' && safeStorage.getSelectedStorageBackend() === 'basic_text'); }
+function encryptionAvailable() { encryptedCapability=safeStorage.isEncryptionAvailable() && !(process.platform === 'linux' && safeStorage.getSelectedStorageBackend() === 'basic_text');return encryptedCapability; }
 function keyFor(provider) {
   if (sessionKeys.has(provider)) return sessionKeys.get(provider);
-  if (!encryptionAvailable() || !vault[provider]) return '';
+  if (!vault[provider] || !encryptionAvailable()) return '';
   try { return safeStorage.decryptString(Buffer.from(vault[provider], 'base64')); } catch { return ''; }
 }
-function settingsPublic() { return { ...settings, keys: Object.fromEntries([...providers].map(p => [p, Boolean(keyFor(p))])), encryptedStorage: encryptionAvailable(), platform: process.platform, version: app.getVersion() }; }
+function settingsPublic() { return { ...settings, keys: Object.fromEntries([...providers].map(p => [p, sessionKeys.has(p)||Boolean(vault[p])])), encryptedStorage: encryptedCapability, platform: process.platform, version: app.getVersion() }; }
 
 const localOptions = input => normalizeLocalConfig({...settings.localAI,...input,comfyModels:{...settings.localAI?.comfyModels,...input?.comfyModels}});
 const ollama = config => createOllamaClient({endpoint:config.ollamaURL});

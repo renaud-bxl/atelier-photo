@@ -76,4 +76,4 @@ npm run package:mac
 
 La page statique est dans `site/`. Elle propose un don PayPal facultatif à Renaud avant les instructions : 0 €, 5 €, 10 €, 20 € ou un montant libre. Aucun paiement n’est exigé ni vérifié par la page.
 
-Le dépôt GitHub de publication n’a pas encore été créé. `site/config.json` contient donc `repository: null` : les commandes de téléchargement public ne sont pas inventées. La page montre les vraies commandes de lancement local. [DISTRIBUTION](docs/DISTRIBUTION.md) explique la configuration du futur dépôt, les installateurs et la publication. Les notices des composants et du modèle de visage sont dans [THIRD_PARTY](docs/THIRD_PARTY.md).
+Le dépôt public est [renaud-bxl/atelier-photo](https://github.com/renaud-bxl/atelier-photo). Les commandes de téléchargement seront activées après publication des binaires vérifiés ; `site/config.json` garde jusque-là `repository: null` et la page montre les commandes de lancement depuis les sources. [DISTRIBUTION](docs/DISTRIBUTION.md) explique les installateurs et la publication. Les notices des composants et du modèle de visage sont dans [THIRD_PARTY](docs/THIRD_PARTY.md).

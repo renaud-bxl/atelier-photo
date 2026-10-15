@@ -621,5 +621,6 @@
   "Le modèle local n’a pas renvoyé de réglages valides.": "O modelo local não devolveu ajustes válidos.",
   "Mémoire libre mesurée": "Memória livre medida",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "A memória livre é reduzida; o sistema ainda pode recuperar memória.",
-  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "O enquadramento é preservado. O retoque de retratos requer um rosto detetado."
+  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "O enquadramento é preservado. O retoque de retratos requer um rosto detetado.",
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "O armazenamento seguro será verificado quando guardar uma chave."
 }

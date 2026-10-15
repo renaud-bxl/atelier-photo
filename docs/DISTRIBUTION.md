@@ -1,6 +1,6 @@
 # Distribution d’Atelier Photo
 
-Les fichiers sont prêts localement. Aucun dépôt GitHub n’a été créé et aucune page, release ou transaction PayPal n’a été publiée. Le dossier `AtelierPhoto` doit constituer la racine du futur dépôt.
+Le dépôt public [renaud-bxl/atelier-photo](https://github.com/renaud-bxl/atelier-photo) a été créé. Le dossier local `AtelierPhoto` constitue la racine prévue de ce dépôt. Lors de cette préparation, GitHub Pages n’est pas encore activé et aucune release binaire n’est disponible. Les workflows sont préparés pour les prochaines étapes ; leur présence ne prouve pas une publication ni une validation multiplateforme réussie. Aucun paiement PayPal n’a été réalisé.
 
 ## Page de présentation et don facultatif
 
@@ -25,9 +25,19 @@ npm start
 
 Node.js 24 et npm doivent être installés. Ouvrir un terminal dans le dossier du projet et attendre la réussite de la première commande avant de lancer la seconde. `npm start` construit l’interface puis ouvre Electron.
 
-Après la création effective du dépôt, remplacer seulement `repository` par son identifiant réel `propriétaire/dépôt`. Une URL GitHub HTTPS du même format est aussi acceptée. Les identifiants malformés sont refusés. Aucun nom de dépôt n’est supposé. Les paramètres PayPal restent ceux du bénéficiaire explicitement choisi.
+Le dépôt existe désormais, mais conserver `repository: null` jusqu’à la publication effective d’une release stable contenant les binaires et les deux scripts d’installation. Après leur vérification, remplacer seulement cette valeur par `"renaud-bxl/atelier-photo"`. Une URL GitHub HTTPS du même format est aussi acceptée. Les identifiants malformés sont refusés. Les paramètres PayPal restent ceux du bénéficiaire explicitement choisi.
 
-Avec un dépôt valide, la page affiche les scripts de la dernière release ainsi qu’un lien vers cette release. Il faut donc publier les scripts **et** les binaires correspondants avant d’activer ce réglage. Définir le dépôt ne prouve pas qu’une version existe. Le dossier `site/` pourra être servi par GitHub Pages ou un autre hébergement statique lors de la future publication ; aucun déploiement n’est lancé ici.
+Avec un dépôt configuré, la page affiche les scripts de la dernière release ainsi qu’un lien vers cette release. Il faut donc publier les scripts **et** les binaires correspondants avant d’activer ce réglage pour éviter des liens de téléchargement inexistants. Définir le dépôt ne prouve pas qu’une version existe. Le parcours gratuit et les commandes locales restent accessibles pendant cette attente.
+
+### Publication GitHub Pages à activer plus tard
+
+`.github/workflows/pages.yml` publiera directement le seul dossier `site/`, sans construction de l’application, installation npm, générateur de site ni clé personnelle. Il se déclenche sur les modifications de `site/**` ou de ce workflow poussées dans `main`, et peut aussi être lancé manuellement depuis `main`. Il utilise l’environnement `github-pages`, les droits `contents: read`, `pages: write` et `id-token: write`, et laisse terminer un déploiement déjà commencé.
+
+Les références vérifiées le 15 octobre 2026 sont [`checkout@v6`](https://github.com/actions/checkout/blob/v6/action.yml), [`configure-pages@v5`](https://github.com/actions/configure-pages/blob/v5/action.yml), [`upload-pages-artifact@v4`](https://github.com/actions/upload-pages-artifact/blob/v4/action.yml) et [`deploy-pages@v5`](https://github.com/actions/deploy-pages/blob/v5/action.yml). Le workflow suit le [mécanisme officiel des workflows Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages). Il n’emploie pas de jeton d’accès personnel : GitHub fournit les autorisations temporaires du job.
+
+Après la réussite des contrôles de l’application, le propriétaire pourra ouvrir les réglages du dépôt, choisir **Pages → Build and deployment → Source → GitHub Actions**, puis lancer **Publish the Atelier Photo website** sur `main`. L’option `enablement: false` interdit au workflow d’activer Pages lui-même. Tant que Pages n’est pas configuré, une exécution s’arrêtera à cette étape sans publier de site. Aucun de ces réglages ni lancement n’a été effectué ici.
+
+L’adresse de publication sera celle indiquée par le résultat du job Pages ; elle ne doit pas être présentée comme déjà accessible. Le site peut être publié avec les instructions depuis les sources pendant que `repository` reste `null`. Les liens d’installation binaire ne seront activés qu’après la première release complète. Le workflow Pages ne construit et ne publie aucune release de l’application.
 
 ## Installateurs
 
@@ -43,13 +53,13 @@ La vérification SHA-256 contrôle l’intégrité par rapport aux empreintes de
 
 ### Mac et Linux
 
-`bash scripts/install.sh --repo PROPRIETAIRE/DEPOT` accepte aussi `--destination /chemin/absolu`. `--help` explique son fonctionnement sans réseau. Il utilise `curl`, les outils SHA-256 du système et `ditto` sur Mac. Apple Silicon est détecté également lorsque le terminal fonctionne sous Rosetta. Linux ARM64 est refusé tant que ses builds ne sont pas validées.
+Après la première release stable, depuis la racine du projet, `bash scripts/install.sh --repo renaud-bxl/atelier-photo` accepte aussi `--destination /chemin/absolu`. `--help` explique son fonctionnement sans réseau. Il utilise `curl`, les outils SHA-256 du système et `ditto` sur Mac. Apple Silicon est détecté également lorsque le terminal fonctionne sous Rosetta. Linux ARM64 est refusé tant que ses builds ne sont pas validées.
 
 Le script n’utilise ni `sudo`, ni suppression d’attributs de quarantaine, ni désactivation de Gatekeeper. L’AppImage reçoit uniquement les permissions d’exécution nécessaires. Les dépendances AppImage du système, notamment FUSE selon la distribution, restent à la charge de l’environnement Linux.
 
 ### Windows
 
-`& .\scripts\install.ps1 -Repository 'PROPRIETAIRE/DEPOT'` utilise PowerShell 5.1 ou supérieur, HTTPS et `Get-FileHash`. Le paramètre `-Destination` permet un autre dossier utilisateur. Le choix ZIP évite tout installateur silencieux et n’exige pas de droits administrateur. Le workflow produit également un installateur NSIS `.exe` pour une installation manuelle ultérieure.
+Après la première release stable, depuis la racine du projet, `& .\scripts\install.ps1 -Repository 'renaud-bxl/atelier-photo'` utilise PowerShell 5.1 ou supérieur, HTTPS et `Get-FileHash`. Le paramètre `-Destination` permet un autre dossier utilisateur. Le choix ZIP évite tout installateur silencieux et n’exige pas de droits administrateur. Le workflow produit également un installateur NSIS `.exe` pour une installation manuelle ultérieure.
 
 Aucune politique `ExecutionPolicy`, protection SmartScreen ou configuration de sécurité de la machine n’est désactivée. Si la politique actuelle interdit les scripts, l’archive ZIP peut être téléchargée et extraite manuellement après comparaison SHA-256. Windows ARM64 n’est pas annoncé comme validé.
 
@@ -61,12 +71,12 @@ Chaque job exécute `npm ci --include=optional`, prépare les runtimes natifs et
 
 Un lancement manuel du workflow construit des artefacts de contrôle sans publier de release. Seul le push intentionnel d’un tag stable `vMAJEUR.MINEUR.CORRECTIF` correspondant à la version de `package.json` autorise le job final de publication. Tous les jobs doivent réussir. Le job d’assemblage ajoute `install.sh`, `install.ps1` et un `SHA256SUMS` commun aux paquets avant la création de la release. Le droit GitHub d’écriture n’est accordé qu’au job de publication.
 
-La signature commerciale Apple/Windows et la notarisation ne sont pas configurées ; le paquet Mac local utilise une signature ad hoc. Les protections des systèmes peuvent donc empêcher ou signaler les premières builds téléchargées. Les scripts ne les contournent pas. Avant une diffusion au public, vérifier les paquets, la signature souhaitée et le lancement sur chaque système ciblé. La présence du workflow ne constitue pas une validation déjà effectuée sous Windows ou Linux.
+La signature de distribution Apple/Windows et la notarisation ne sont pas configurées ; le paquet Mac local utilise une signature ad hoc. Les protections des systèmes peuvent donc empêcher ou signaler les premières builds téléchargées. Les scripts ne les contournent pas. L’application reste gratuite et le don facultatif ; ces choix ne constituent ni une signature de code ni une vérification du paiement. Avant une diffusion au public, vérifier les paquets, la signature souhaitée et le lancement sur chaque système ciblé. La présence du workflow ne constitue pas une validation déjà effectuée sous Windows ou Linux.
 
 ## Vérifications locales effectuées
 
 La page a été vérifiée dans un navigateur sur des largeurs de 1 440 et 390 pixels : parcours gratuit, choix de 10 €, montant libre de 0 € et 12,50 €, montant invalide, trois onglets système, branche avec dépôt simulé, absence de débordement mobile et d’erreur JavaScript. Aucun lien PayPal n’a été ouvert. Les fonctions de génération de liens et de validation du dépôt ont été contrôlées hors ligne.
 
-La syntaxe shell et le YAML du workflow ont été vérifiés. Les chemins Mac ZIP et Linux AppImage ont été exercés avec des téléchargements entièrement simulés dans un dossier temporaire ; une empreinte incorrecte bloque bien l’installation. PowerShell n’étant pas disponible sur ce Mac, le script Windows n’a pas été exécuté ni validé par son parseur natif. Les builds GitHub et les installations sur de vraies machines Windows/Linux restent à exécuter après mise en place du dépôt.
+La syntaxe shell et le YAML des workflows ont été vérifiés localement. Les chemins Mac ZIP et Linux AppImage ont été exercés avec des téléchargements entièrement simulés dans un dossier temporaire ; une empreinte incorrecte bloque bien l’installation. PowerShell n’étant pas disponible sur ce Mac, le script Windows n’a pas été exécuté ni validé par son parseur natif. Les builds GitHub, le déploiement Pages et les installations sur de vraies machines Windows/Linux restent à exécuter après publication du code dans le dépôt.
 
 Les bibliothèques RAW et les conditions d’embarquement des runtimes sont détaillées dans [NATIVE-RUNTIMES](NATIVE-RUNTIMES.md). La préparation génère leur provenance ; la CI teste également le chargement natif depuis les paquets. Ces étapes doivent encore être exécutées sur Windows/Linux.

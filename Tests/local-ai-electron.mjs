@@ -42,6 +42,10 @@ Object.assign(contradictoryRecipe.adjustments, { cropRatio: 1, rotation: 15, cro
 for (const key of portraitControls) contradictoryRecipe.adjustments[key] = 0.1;
 const requests = [], serverErrors = [], pageErrors = [];
 let application, server, stage = 'fixtures', photoId, originalHash;
+const started = performance.now();
+const markStage = value => { stage = value; console.log(`[local-ai-qa +${((performance.now() - started) / 1000).toFixed(1)}s] ${stage}`); };
+const heartbeat = setInterval(() => console.log(`[local-ai-qa +${((performance.now() - started) / 1000).toFixed(1)}s] waiting: ${stage}`), 15_000);
+heartbeat.unref();
 const hash = value => createHash('sha256').update(value).digest('hex');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -160,6 +164,7 @@ async function dismissToast(page) {
 }
 
 try {
+  markStage('create and verify synthetic PNG16 fixture');
   await makeFixture();
   if (fixtureOnly) {
     assert.equal((await sharp(source).metadata()).depth, 'ushort');
@@ -168,22 +173,27 @@ try {
   } else {
     // Obtain an unused loopback port, then close it so the first UI check sees a
     // genuinely absent service. This never contacts an installed Ollama instance.
-    stage = 'reserve private loopback port';
+    markStage('reserve private loopback port');
     server = fakeOllama(); const port = await listen(server); await closeServer(server);
     const endpoint = `http://127.0.0.1:${port}/`;
     await writeFile(join(profile, 'settings.json'), JSON.stringify({ language: 'fr', provider: 'openai' }));
     const env = { ...process.env, ATELIER_TEST_DATA: profile };
     for (const key of ['ELECTRON_RUN_AS_NODE', 'OPENAI_API_KEY', 'GEMINI_API_KEY', 'GOOGLE_API_KEY', 'ANTHROPIC_API_KEY', 'CLAUDE_API_KEY', 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy', 'NODE_USE_ENV_PROXY']) delete env[key];
     const { _electron } = await import('playwright');
-    stage = 'launch isolated Electron profile';
+    markStage(packagedExecutable ? 'launch packaged Electron with isolated profile' : 'launch source Electron with isolated profile');
     application = await _electron.launch({ executablePath: packagedExecutable || require('electron'), args: packagedExecutable ? [] : [root], cwd: root, env, timeout: 30_000 });
+    markStage('read isolated userData path from main process');
     assert.equal(await application.evaluate(({ app }) => app.getPath('userData')), profile);
+    markStage('install test-only external network guards');
     await networkGuard();
+    markStage('wait for the first application window');
     const page = await application.firstWindow(); page.on('pageerror', error => pageErrors.push(error.message));
+    markStage('wait for synthetic fixture in the library');
     await page.getByTestId('photo-card').first().waitFor({ timeout: 30_000 });
+    markStage('read initial key-presence flags through IPC');
     await settingsHaveNoKeys(page);
 
-    stage = 'local provider and hardware UI';
+    markStage('local provider and hardware UI');
     await page.getByRole('button', { name: 'Réglages IA', exact: true }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('button', { name: 'IA locale', exact: true }).click();
@@ -212,14 +222,14 @@ try {
     await mkdir(screenshotDirectory, { recursive: true });
     await page.screenshot({ path: join(screenshotDirectory, 'local-ai-hardware.png') });
 
-    stage = 'honest absent-service message';
+    markStage('honest absent-service message');
     await panel.getByRole('button', { name: 'Détecter les modèles', exact: true }).click();
     await panel.getByText('Le service local ne répond pas. Ouvrez Ollama, puis réessayez.', { exact: true }).waitFor();
     assert.equal(await panel.getByText('Service local disponible', { exact: true }).count(), 0);
     assert.equal(requests.length, 0); await settingsHaveNoKeys(page);
     await page.screenshot({ path: join(screenshotDirectory, 'local-ai-service-absent.png') });
 
-    stage = 'simulated Ollama discovery and settings save';
+    markStage('simulated Ollama discovery and settings save');
     await listen(server, port);
     await panel.getByRole('button', { name: 'Détecter les modèles', exact: true }).click();
     await panel.getByText('Service local disponible', { exact: true }).waitFor();
@@ -230,14 +240,16 @@ try {
     assert.equal(settings.provider, 'local'); assert.equal(settings.localAI.model, MODEL); assert.equal(settings.localAI.ollamaURL, endpoint);
     await settingsHaveNoKeys(page); await dismissToast(page);
 
-    stage = 'real IPC analysis, proposal and apply';
+    markStage('real IPC analysis, proposal and apply');
     await page.getByTestId('photo-card').first().dblclick();
     await page.locator('.base-image').waitFor({ state: 'visible' });
+    markStage('wait for actual MediaPipe face detection on synthetic gradient');
     const faces = await page.evaluate(id => window.atelier.detectFaces(id), photoId);
     assert.equal(faces.faces.length, 0, 'The actual local face detector must find no person in this synthetic gradient.');
     await page.getByRole('button', { name: 'Assistant IA', exact: true }).click();
     await page.getByRole('button', { name: 'Proposer des réglages', exact: true }).click();
     await page.getByLabel('Consigne de retouche IA', { exact: true }).fill('Éclaircis légèrement cette mire synthétique et conserve sa précision.');
+    markStage('request and validate contradictory simulated local recommendation');
     await page.getByRole('button', { name: 'Analyser cette photo', exact: true }).click();
     await page.locator('.ai-result').getByText(explanation, { exact: true }).waitFor({ timeout: 30_000 });
     assert.equal((await page.evaluate(id => window.atelier.getPhoto(id), photoId)).adjustments.exposure ?? 0, 0, 'A proposal must wait for Apply.');
@@ -249,7 +261,7 @@ try {
     for (const key of portraitControls) assert.equal(applied.adjustments[key], 0, `No-face analysis left a portrait adjustment active: ${key}`);
     await settingsHaveNoKeys(page);
 
-    stage = 'real IPC/UI PNG16 export';
+    markStage('real IPC/UI PNG16 export');
     await stubDirectory(outputDirectory);
     await page.getByRole('button', { name: 'Exporter', exact: true }).click();
     const exporting = page.getByRole('dialog');
@@ -290,9 +302,15 @@ try {
     console.log('PASS: isolated local provider without keys; real hardware/OS UI and three profiles; honest absent service; contradictory geometry suppressed and no-face portraits neutralized; PNG16 ' + levelsPerChannel.join('/') + ' levels/channel; original SHA-256 unchanged; no downloads or external connections.');
   }
 } catch (error) {
+  console.error(`[local-ai-qa] failure while: ${stage}: ${error.message}`);
   if (application) try { await mkdir(screenshotDirectory, { recursive: true }); await (await application.firstWindow()).screenshot({ path: join(screenshotDirectory, 'local-ai-failure.png') }); } catch { /* Preserve the original failure. */ }
   error.message = `[${stage}] ${error.message}`; throw error;
 } finally {
+  markStage('close isolated application');
   try { if (application) await application.close(); }
-  finally { try { await closeServer(server); } finally { await rm(temporary, { recursive: true, force: true }); } }
+  finally {
+    markStage('close synthetic loopback server and remove QA profile');
+    try { await closeServer(server); }
+    finally { await rm(temporary, { recursive: true, force: true }); clearInterval(heartbeat); }
+  }
 }

@@ -621,5 +621,6 @@
   "Le modèle local n’a pas renvoyé de réglages valides.": "ローカルモデルから有効な調整が返されませんでした。",
   "Mémoire libre mesurée": "測定された空きメモリ",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "空きメモリが少なくなっていますが、システムはまだメモリを回収できる可能性があります。",
-  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "構図は維持されます。ポートレート補正には顔の検出が必要です。"
+  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "構図は維持されます。ポートレート補正には顔の検出が必要です。",
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "キーを保存する際に、安全なストレージを確認します。"
 }

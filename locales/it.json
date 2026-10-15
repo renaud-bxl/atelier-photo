@@ -621,5 +621,6 @@
   "Le modèle local n’a pas renvoyé de réglages valides.": "Il modello locale non ha restituito regolazioni valide.",
   "Mémoire libre mesurée": "Memoria libera misurata",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "La memoria libera è scarsa; il sistema può ancora recuperare memoria.",
-  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "L’inquadratura viene conservata. Il ritocco dei ritratti richiede un volto rilevato."
+  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "L’inquadratura viene conservata. Il ritocco dei ritratti richiede un volto rilevato.",
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "L’archiviazione sicura verrà verificata quando salverai una chiave."
 }

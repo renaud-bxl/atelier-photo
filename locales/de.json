@@ -621,5 +621,6 @@
   "Le modèle local n’a pas renvoyé de réglages valides.": "Das lokale Modell hat keine gültigen Anpassungen zurückgegeben.",
   "Mémoire libre mesurée": "Gemessener freier Arbeitsspeicher",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "Es ist wenig Arbeitsspeicher frei; das System kann möglicherweise noch Speicher freigeben.",
-  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "Der Bildausschnitt bleibt erhalten. Für die Porträtretusche muss ein Gesicht erkannt worden sein."
+  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "Der Bildausschnitt bleibt erhalten. Für die Porträtretusche muss ein Gesicht erkannt worden sein.",
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "Der sichere Speicher wird geprüft, wenn Sie einen Schlüssel speichern."
 }

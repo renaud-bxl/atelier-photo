@@ -621,5 +621,6 @@
   "Le modèle local n’a pas renvoyé de réglages valides.": "本地模型未返回有效的调整设置。",
   "Mémoire libre mesurée": "测得的空闲内存",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "空闲内存较少；系统仍可能回收更多内存。",
-  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "保留原有构图。人像修饰需要先检测到人脸。"
+  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "保留原有构图。人像修饰需要先检测到人脸。",
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "保存密钥时将检查安全存储。"
 }

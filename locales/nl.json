@@ -621,5 +621,6 @@
   "Le modèle local n’a pas renvoyé de réglages valides.": "Het lokale model heeft geen geldige aanpassingen teruggestuurd.",
   "Mémoire libre mesurée": "Gemeten vrij geheugen",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "Er is weinig vrij geheugen; het systeem kan nog geheugen vrijmaken.",
-  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "De kadrering blijft behouden. Voor portretretouche moet een gezicht zijn gedetecteerd."
+  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "De kadrering blijft behouden. Voor portretretouche moet een gezicht zijn gedetecteerd.",
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "De beveiligde opslag wordt gecontroleerd wanneer u een sleutel opslaat."
 }

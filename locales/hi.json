@@ -621,5 +621,6 @@
   "Le modèle local n’a pas renvoyé de réglages valides.": "स्थानीय मॉडल ने मान्य समायोजन नहीं लौटाए।",
   "Mémoire libre mesurée": "मापी गई खाली मेमोरी",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "खाली मेमोरी कम है; सिस्टम अभी भी मेमोरी वापस उपलब्ध करा सकता है।",
-  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "फ़्रेमिंग सुरक्षित रहती है। पोर्ट्रेट रीटचिंग के लिए चेहरे का पता लगना ज़रूरी है।"
+  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "फ़्रेमिंग सुरक्षित रहती है। पोर्ट्रेट रीटचिंग के लिए चेहरे का पता लगना ज़रूरी है।",
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "कुंजी सहेजते समय सुरक्षित स्टोरेज की जाँच की जाएगी।"
 }

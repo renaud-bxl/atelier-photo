@@ -621,5 +621,6 @@
   "Le modèle local n’a pas renvoyé de réglages valides.": "لم يُرجع النموذج المحلي تعديلات صالحة.",
   "Mémoire libre mesurée": "الذاكرة الحرة المقاسة",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "الذاكرة الحرة منخفضة؛ قد يظل بإمكان النظام استعادة ذاكرة.",
-  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "يُحافَظ على تأطير الصورة. يتطلب تنقيح الصور الشخصية اكتشاف وجه."
+  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "يُحافَظ على تأطير الصورة. يتطلب تنقيح الصور الشخصية اكتشاف وجه.",
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "سيتم التحقق من التخزين الآمن عند حفظ مفتاح."
 }

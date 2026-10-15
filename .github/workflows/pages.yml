@@ -1,0 +1,52 @@
+name: Publish the Atelier Photo website
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Publish the reviewed static site
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out the website
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Require an existing GitHub Pages configuration
+        uses: actions/configure-pages@v5
+        with:
+          enablement: false
+      - name: Check the static entry files
+        run: |
+          test -s site/index.html
+          test -s site/style.css
+          test -s site/app.js
+          test -s site/config.json
+      - name: Upload only the static website
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+          retention-days: 1
+      - name: Publish to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

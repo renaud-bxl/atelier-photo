@@ -621,5 +621,6 @@
   "Le modèle local n’a pas renvoyé de réglages valides.": "The local model did not return valid adjustments.",
   "Mémoire libre mesurée": "Measured free memory",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "Free memory is low; the system may still reclaim memory.",
-  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "Framing is preserved. Portrait retouching requires a detected face."
+  "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "Framing is preserved. Portrait retouching requires a detected face.",
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "Secure storage will be checked when you save a key."
 }
