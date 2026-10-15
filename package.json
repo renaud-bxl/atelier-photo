@@ -2,7 +2,7 @@
   "name": "atelier-photo",
   "version": "0.1.0",
   "private": true,
-  "description": "Atelier photo local, retouche et assistance IA avec vos propres clés.",
+  "description": "Atelier photo local, retouche et assistance IA locale ou avec vos propres clés.",
   "author": "Renaud",
   "license": "MIT",
   "type": "module",
@@ -30,6 +30,8 @@
       "LICENSE",
       "docs/THIRD_PARTY.md",
       "docs/RAW.md",
+      "docs/LOCAL-AI.md",
+      "docs/LOCAL-AI-REAL-QA.md",
       "docs/NATIVE-RUNTIMES.md"
     ],
     "asarUnpack": [

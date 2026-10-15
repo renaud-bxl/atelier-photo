@@ -54,4 +54,10 @@ ONNX Runtime Web 1.30.0, [Microsoft, licence MIT](https://github.com/microsoft/o
 
 OpenAI/Gemini produisent des bordures depuis un aperçu réduit. L’application recopie le centre original localement en RGBA16 pour le préserver exactement. Les pixels générés et agrandis n’acquièrent pas une précision photographique supplémentaire du fait de leur conteneur PNG16. Le service distant choisi conserve ses propres conditions d’utilisation et de facturation.
 
+## Moteurs IA locaux facultatifs
+
+Le client communique avec un Ollama ou un ComfyUI installé séparément par l’utilisateur. Aucun runtime Ollama/ComfyUI ni poids Qwen3-VL/FLUX n’est redistribué dans ce paquet. Ollama est MIT, ComfyUI est GPL v3 ; leurs propres dépendances et modèles conservent leurs licences. Les profils proposés sont Qwen3-VL Instruct 2B/4B/8B et FLUX.2 Klein 4B Distilled sous Apache 2.0. Les modèles 9B à conditions différentes ne font pas partie du profil accepté.
+
+Le graphe API fixe d’édition suit le [template officiel ComfyUI Klein 4B Distilled](https://github.com/Comfy-Org/workflow_templates/blob/main/templates/image_flux2_klein_image_edit_4b_distilled.json). Les routes et limites de notre client sont documentées dans [LOCAL-AI](LOCAL-AI.md). La même protection RGBA16 du centre s’applique aux agrandissements locaux.
+
 Les sources et licences ont été consultées le 15 octobre 2026.

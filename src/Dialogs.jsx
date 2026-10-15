@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { CheckCircle2, ExternalLink, FolderOutput, Info, KeyRound, LoaderCircle, ShieldCheck, Sparkles, Trash2, X } from 'lucide-react';
+import {LocalAIPanel} from './LocalAIPanel.jsx';
 
 const blue = '#7db7ff';
 const providers = [
@@ -90,7 +91,7 @@ export function SettingsModal({ onClose, onSaved, notify }) {
   const save = async () => {
     setBusy('settings'); setError('');
     try {
-      const result = await window.atelier.saveSettings({ provider: settings.provider, models: settings.models, imageModels: settings.imageModels });
+      const result = await window.atelier.saveSettings({ provider: settings.provider, models: settings.models, imageModels: settings.imageModels,localAI:settings.localAI });
       onSaved?.(result);
       notify?.('Réglages IA enregistrés.');
       onClose();
@@ -101,22 +102,22 @@ export function SettingsModal({ onClose, onSaved, notify }) {
   };
   const active = providers.find(provider => provider.id === settings?.provider);
 
-  return <ModalFrame title="Votre assistant IA" subtitle="Vos fournisseurs. Vos modèles. Vos clés personnelles." icon={Sparkles} onClose={onClose}
-    footer={<><span className="muted" style={{ color: '#969da9', fontSize: 11 }}>Les modèles dépendent des accès de votre compte.</span><button type="button" className="primary" onClick={save} disabled={!settings || Boolean(busy)}>{busy === 'settings' ? 'Enregistrement…' : 'Enregistrer'}</button></>}>
+  return <ModalFrame title="Votre assistant IA" subtitle="Clé personnelle ou IA sur votre ordinateur." icon={Sparkles} onClose={onClose}
+    footer={<><span className="muted" style={{ color: '#969da9', fontSize: 11 }}>{settings?.provider==='local'?'Les performances dépendent de votre matériel.':'Les modèles dépendent des accès de votre compte.'}</span><button type="button" className="primary" onClick={save} disabled={!settings || Boolean(busy)}>{busy === 'settings' ? 'Enregistrement…' : 'Enregistrer'}</button></>}>
     {error && <p role="alert" className="error" style={{ color: '#ff9999', margin: '0 0 16px' }}>{error}</p>}
     {!settings ? !error && <p className="muted" style={{ display: 'flex', gap: 8, alignItems: 'center' }}><LoaderCircle size={17} />Chargement des réglages…</p> : <div style={{ display: 'grid', gap: 21 }}>
       <section style={{ display: 'grid', gap: 12 }}>
         <h3 className="section-title" style={{ margin: 0, color: '#969da9', fontSize: 10, letterSpacing: '0.13em' }}>FOURNISSEUR ACTIF</h3>
-        <div role="group" aria-label="Fournisseur IA actif" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 7 }}>
-          {providers.map(provider => <button type="button" key={provider.id} aria-pressed={settings.provider === provider.id} onClick={() => setSettings(current => ({ ...current, provider: provider.id }))}
+        <div role="group" aria-label="Fournisseur IA actif" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 7 }}>
+          {[...providers,{id:'local',name:'IA locale'}].map(provider => <button type="button" key={provider.id} aria-pressed={settings.provider === provider.id} onClick={() => setSettings(current => ({ ...current, provider: provider.id }))}
             style={{ border: `1px solid ${settings.provider === provider.id ? '#7db7ff66' : '#363a43'}`, borderRadius: 9, padding: '10px 12px', background: settings.provider === provider.id ? '#7db7ff18' : '#202329', color: settings.provider === provider.id ? blue : '#c7cbd2', cursor: 'pointer', font: 'inherit', fontSize: 13 }}>{provider.name}</button>)}
         </div>
-        <div className="card" style={{ ...cardStyle, display: 'grid', gap: 15 }}>
+        {settings.provider==='local'?<LocalAIPanel value={settings.localAI} onChange={localAI=>setSettings(current=>({...current,localAI}))}/>:<div className="card" style={{ ...cardStyle, display: 'grid', gap: 15 }}>
           <label className="field" style={labelStyle}>Modèle d’analyse · {active?.name}<input value={settings.models?.[settings.provider] || ''} onChange={event => updateModel('models', settings.provider, event.target.value)} maxLength={120} spellCheck={false} style={fieldStyle} /></label>
-          {settings.provider !== 'claude' ? <label className="field" style={labelStyle}>Modèle de retouche d’image<input value={settings.imageModels?.[settings.provider] || ''} onChange={event => updateModel('imageModels', settings.provider, event.target.value)} maxLength={120} spellCheck={false} style={fieldStyle} /></label> : <p className="muted" style={{ margin: 0, display: 'flex', gap: 9, fontSize: 12, lineHeight: 1.55, color: '#969da9' }}><Info size={17} style={{ flexShrink: 0, marginTop: 1 }} />Claude analyse les photos et propose des réglages. Pour une retouche générative d’image, choisissez OpenAI ou Gemini.</p>}
-        </div>
+          {settings.provider !== 'claude' ? <label className="field" style={labelStyle}>Modèle de retouche d’image<input value={settings.imageModels?.[settings.provider] || ''} onChange={event => updateModel('imageModels', settings.provider, event.target.value)} maxLength={120} spellCheck={false} style={fieldStyle} /></label> : <p className="muted" style={{ margin: 0, display: 'flex', gap: 9, fontSize: 12, lineHeight: 1.55, color: '#969da9' }}><Info size={17} style={{ flexShrink: 0, marginTop: 1 }} />Claude analyse les photos et propose des réglages. Pour une retouche générative d’image, choisissez OpenAI, Gemini ou ComfyUI en mode local.</p>}
+        </div>}
       </section>
-      <section style={{ display: 'grid', gap: 10 }}>
+      {settings.provider!=='local'&&<><section style={{ display: 'grid', gap: 10 }}>
         <h3 className="section-title" style={{ margin: '0 0 2px', color: '#969da9', fontSize: 10, letterSpacing: '0.13em' }}>CLÉS PERSONNELLES</h3>
         {providers.map(provider => <div className="card" key={provider.id} style={cardStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
@@ -134,7 +135,7 @@ export function SettingsModal({ onClose, onSaved, notify }) {
           {messages[provider.id] && <p role={messages[provider.id].error ? 'alert' : 'status'} className={messages[provider.id].error ? 'error' : ''} style={{ margin: '9px 0 0', fontSize: 11, color: messages[provider.id].error ? '#ff9999' : blue }}>{messages[provider.id].text}</p>}
         </div>)}
       </section>
-      <div style={{ display: 'flex', gap: 10, padding: 15, background: '#7db7ff09', borderRadius: 10, color: '#969da9', fontSize: 12, lineHeight: 1.6 }}><ShieldCheck size={19} color={blue} style={{ flexShrink: 0, marginTop: 2 }} /><div>{settings.encryptedStorage ? 'Vos clés sont chiffrées par le système sur cet appareil.' : 'Les clés restent en mémoire pour cette session. Vous devrez les ressaisir au prochain lancement.'}<br />Une photo est transmise au fournisseur choisi uniquement lorsque vous lancez explicitement une action IA.</div></div>
+      <div style={{ display: 'flex', gap: 10, padding: 15, background: '#7db7ff09', borderRadius: 10, color: '#969da9', fontSize: 12, lineHeight: 1.6 }}><ShieldCheck size={19} color={blue} style={{ flexShrink: 0, marginTop: 2 }} /><div>{settings.encryptedStorage ? 'Vos clés sont chiffrées par le système sur cet appareil.' : 'Les clés restent en mémoire pour cette session. Vous devrez les ressaisir au prochain lancement.'}<br />Une photo est transmise au fournisseur choisi uniquement lorsque vous lancez explicitement une action IA.</div></div></>}
     </div>}
   </ModalFrame>;
 }

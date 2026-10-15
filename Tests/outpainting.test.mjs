@@ -117,7 +117,7 @@ test('margins and provider are validated before any paid request', async t => {
     await assert.rejects(expandImage({ ...config, imageData, margins }), { name: 'OutpaintingError' });
   }
   await assert.rejects(expandImage({ provider: 'claude' }), /Claude/);
-  await assert.rejects(expandImage({ ...config, provider: 'other', imageData, margins: { left: 10 } }), /OpenAI ou Gemini/);
+  await assert.rejects(expandImage({ ...config, provider: 'other', imageData, margins: { left: 10 } }), /moteur de génération/);
   await assert.rejects(expandImage({ ...config, imageData: Buffer.from('bad'), margins: { left: 50 } }), /lire/);
   await assert.rejects(expandImage({ ...config, imageData: Buffer.alloc(100 * 1024 * 1024 + 1), margins: { left: 50 } }), /100 Mo/);
   await assert.rejects(expandImage({ ...config, imageData, instruction: 'x'.repeat(10001), margins: { left: 50 } }), /10 000/);

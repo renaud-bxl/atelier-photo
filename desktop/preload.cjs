@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 const methods = ['list','getPhoto','counts','metadata','importPhotos','importFolder','importDropped','update','remove','presets','importPresets','savePreset','deletePreset','sync','exportPhotos','cancelJob','getSettings','saveSpatialPreview','setLanguage','saveSettings','saveKey','deleteKey','ai','aiBatch','cancelAI','detectFaces','saveProject','openProject','openExternal','faceReady','completeFaceTask'];
 const api = Object.fromEntries(methods.map(name => [name, (...args) => ipcRenderer.invoke(`atelier:${name}`, ...args)]));
+for(const name of ['localHardware','localRecommendations','chooseLocalModelDirectory','localStatus','localPull','cancelLocalPull','localBenchmark','openLocalInstaller','comfyStatus'])api[name]=(...args)=>ipcRenderer.invoke(`atelier:${name}`,...args);
 api.filePath = file => { try { return webUtils.getPathForFile(file); } catch { return ''; } };
 function subscribe(channel, callback) {
   if (typeof callback !== 'function') throw new TypeError('Le rappel doit être une fonction.');

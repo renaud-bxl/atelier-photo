@@ -22,6 +22,11 @@ exposure est en EV ; temperature et tint sont des corrections relatives, pas des
 
 function localizedPrompt(language){const name=({fr:'français',nl:'néerlandais',en:'anglais',es:'espagnol',zh:'chinois simplifié',ja:'japonais',ar:'arabe',de:'allemand',pt:'portugais',it:'italien',hi:'hindi',ko:'coréen'})[language]||'français';return SYSTEM_PROMPT.replaceAll('en français',`en ${name}`);}
 
+export const recommendationPrompt=language=>localizedPrompt(language);
+export function recommendationSchema(){
+  return {type:'object',additionalProperties:false,required:['adjustments','explanation'],properties:{adjustments:{type:'object',additionalProperties:false,required:[...Object.keys(RANGES),'flipHorizontal'],properties:{...Object.fromEntries(Object.entries(RANGES).map(([key,[minimum,maximum]])=>[key,{type:'number',minimum,maximum}])),flipHorizontal:{type:'boolean'}}},explanation:{type:'string',maxLength:4000}}};
+}
+
 /** Suggestions use the model selected for vision; no credentials are read from the environment. */
 export async function recommend(options) {
   const config = validateOptions(options);

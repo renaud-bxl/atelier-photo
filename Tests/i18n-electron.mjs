@@ -84,8 +84,26 @@ try {
     assert.ok(modelLabel.includes(expected['Modèle d’analyse ·']), `${code}: analysis-model label was not translated`);
     assert.deepEqual(await page.evaluate(async () => (await window.atelier.getSettings()).keys), { openai: false, gemini: false, claude: false });
     if (code === 'en') await page.screenshot({ path: join(screenshots, 'i18n-en-settings.png') });
+
+    const savedProvider = await page.evaluate(async () => (await window.atelier.getSettings()).provider);
+    const localProvider = settings.getByRole('button', { name: expected['IA locale'], exact: true });
+    await localProvider.click();
+    assert.equal(await localProvider.getAttribute('aria-pressed'), 'true', `${code}: local provider was not selected in the dialog`);
+    const localPanel = settings.getByTestId('local-ai-panel');
+    await localPanel.waitFor();
+    await localPanel.getByRole('heading', { name: expected['Vérifier cet ordinateur'], exact: true }).waitFor();
+    const diagnostic = localPanel.getByRole('button', { name: expected['Vérifier cet ordinateur'], exact: true });
+    assert.equal(await diagnostic.isEnabled(), true, `${code}: the diagnostic should require an explicit action`);
+    await localPanel.getByRole('combobox', { name: expected['Modèle d’analyse local'], exact: true }).waitFor();
+    assert.equal(await localPanel.locator('summary').textContent(), expected['Retouche générative locale'], `${code}: generative-local section label was not translated`);
+    const installer = localPanel.getByRole('button', { name: expected['Installer le moteur local'], exact: true });
+    assert.equal(await installer.isDisabled(), true, `${code}: installation must remain disabled before diagnosis`);
+    assert.equal(await localPanel.locator('dl').count(), 0, `${code}: opening local settings must not run the hardware diagnostic`);
+    assert.equal(await page.evaluate(async () => (await window.atelier.getSettings()).provider), savedProvider, `${code}: selecting an unsaved provider changed persisted settings`);
+    // Close without diagnosing, installing, downloading, benchmarking, or saving the provider.
     await page.keyboard.press('Escape');
     await settings.waitFor({ state: 'hidden' });
+    assert.equal(await page.evaluate(async () => (await window.atelier.getSettings()).provider), savedProvider, `${code}: closing local settings changed the provider`);
 
     await page.getByRole('button', { name: expected['Exporter'], exact: true }).click();
     const exporting = page.getByRole('dialog');
@@ -93,7 +111,7 @@ try {
     await exporting.getByRole('button', { name: expected['Choisir le dossier et exporter'], exact: true }).waitFor();
     await exporting.getByRole('button', { name: expected['Annuler'], exact: true }).click();
     await exporting.waitFor({ state: 'hidden' });
-    console.log(`${code}: heading, accessibility labels, settings, export and ${code === 'ar' ? 'RTL' : 'LTR'} passed.`);
+    console.log(`${code}: heading, accessibility labels, settings, local AI, export and ${code === 'ar' ? 'RTL' : 'LTR'} passed.`);
   }
 
   await page.locator('.language-select').selectOption('nl');
