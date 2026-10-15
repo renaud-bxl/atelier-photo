@@ -33,6 +33,8 @@ Chaque document possède un titre Bêta, une description, son canonical absolu, 
 
 Les messages du navigateur sont embarqués dans un attribut HTML contenant du JSON échappé. `app.js` les utilise pour les montants, PayPal, la copie des commandes et l’état des téléchargements. Le contenu traduit est inséré avec `textContent`, jamais interprété comme du HTML.
 
+Les liens CSS et JavaScript portent une version dérivée du SHA-256 de leurs contenus. Une nouvelle page traduite ne réutilise ainsi pas les anciens contrôles français conservés en cache par un navigateur.
+
 Le sélecteur navigue vers un vrai document HTML et conserve l’ancre courante. Il n’y a ni routeur client ni redirection automatique selon le navigateur. Le guide en cinq étapes et ses liens officiels sont accessibles sans JavaScript ; une navigation de langues supplémentaire et le téléchargement GitHub sont alors disponibles dans les éléments `noscript`.
 
 ## Vérification et publication

@@ -1,6 +1,7 @@
 import { cp, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 export const SITE_LANGUAGES = Object.freeze([
   ['fr', 'Français', 'fr_FR'], ['nl', 'Nederlands', 'nl_NL'], ['en', 'English', 'en_GB'],
@@ -26,7 +27,7 @@ export function validateCatalog(source, dictionary, language) {
   for (const key of ['a', 'p', 'renaud2005@gmail.com', '· EUR']) if (dictionary[key] !== source[key]) throw new Error(`${language}: technical identity changed: ${key}`);
 }
 
-export function renderPage({ template, dictionary, language, siteURL }) {
+export function renderPage({ template, dictionary, language, siteURL, assetVersion = '1' }) {
   const entry = SITE_LANGUAGES.find(([code]) => code === language);
   if (!entry) throw new Error(`Unsupported site language: ${language}`);
   const base = new URL(siteURL);
@@ -39,7 +40,7 @@ export function renderPage({ template, dictionary, language, siteURL }) {
     return escapeHTML(dictionary[key]);
   };
   const values = {
-    LANG: language, DIR: language === 'ar' ? 'rtl' : 'ltr', ASSET_PREFIX: prefix,
+    LANG: language, DIR: language === 'ar' ? 'rtl' : 'ltr', ASSET_PREFIX: prefix, ASSET_VERSION: assetVersion,
     CANONICAL: pageURL(language), OG_IMAGE: new URL('og/atelier-photo-beta-v1.png', base).href, OG_LOCALE: entry[2],
     MESSAGES: escapeHTML(JSON.stringify(dictionary)),
     HREFLANG: SITE_LANGUAGES.map(([code]) => `<link rel="alternate" hreflang="${code}" href="${escapeHTML(pageURL(code))}">`).concat(`<link rel="alternate" hreflang="x-default" href="${escapeHTML(pageURL('fr'))}">`).join('\n  '),
@@ -60,11 +61,14 @@ export async function buildSite({ outDir = join(root, 'site-dist'), siteURL = pr
   const output = resolve(outDir);
   const sourceRelative = relative(output, sourceDirectory);
   if (!sourceRelative || !sourceRelative.startsWith('..') && !isAbsolute(sourceRelative)) throw new Error('The output directory must not contain the website sources');
-  const [template, source, image] = await Promise.all([
+  const [template, source, image, style, script] = await Promise.all([
     readFile(join(sourceDirectory, 'index.html'), 'utf8'),
     readFile(join(sourceDirectory, 'locales/fr.json'), 'utf8').then(JSON.parse),
     readFile(join(sourceDirectory, 'og/atelier-photo-beta-v1.png')),
+    readFile(join(sourceDirectory, 'style.css')),
+    readFile(join(sourceDirectory, 'app.js')),
   ]);
+  const assetVersion = createHash('sha256').update(style).update('\0').update(script).digest('hex').slice(0, 16);
   if (!image.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) || image.readUInt32BE(16) !== 1200 || image.readUInt32BE(20) !== 630) throw new Error('The shared OG image must be a 1200 × 630 PNG');
   const catalogs = await Promise.all(SITE_LANGUAGES.map(async ([language]) => {
     const dictionary = JSON.parse(await readFile(join(sourceDirectory, 'locales', `${language}.json`), 'utf8'));
@@ -83,7 +87,7 @@ export async function buildSite({ outDir = join(root, 'site-dist'), siteURL = pr
     for (const { language, dictionary } of catalogs) {
       const directory = language === 'fr' ? staging : join(staging, language);
       await mkdir(directory, { recursive: true });
-      await writeFile(join(directory, 'index.html'), renderPage({ template, dictionary, language, siteURL: base.href }));
+      await writeFile(join(directory, 'index.html'), renderPage({ template, dictionary, language, siteURL: base.href, assetVersion }));
     }
     await writeFile(join(staging, '.nojekyll'), '');
     await writeFile(join(staging, marker), JSON.stringify({ languages: SITE_LANGUAGES.map(([code]) => code), messages: Object.keys(source).length }) + '\n');
