@@ -42,6 +42,7 @@ Object.assign(contradictoryRecipe.adjustments, { cropRatio: 1, rotation: 15, cro
 for (const key of portraitControls) contradictoryRecipe.adjustments[key] = 0.1;
 const requests = [], serverErrors = [], pageErrors = [];
 let application, server, stage = 'fixtures', photoId, originalHash;
+let applicationStderr = '';
 const started = performance.now();
 const markStage = value => { stage = value; console.log(`[local-ai-qa +${((performance.now() - started) / 1000).toFixed(1)}s] ${stage}`); };
 const heartbeat = setInterval(() => console.log(`[local-ai-qa +${((performance.now() - started) / 1000).toFixed(1)}s] waiting: ${stage}`), 15_000);
@@ -150,6 +151,43 @@ async function networkGuard() {
     };
   });
 }
+async function diagnosticCapture() {
+  application.process().stderr?.on('data', bytes => {
+    applicationStderr = (applicationStderr + bytes.toString()).slice(-64 * 1024);
+  });
+  await application.evaluate(({ app, BrowserWindow, ipcMain, session }) => {
+    const diagnostics = globalThis.__localAIQA.diagnostics = { messages: [], faceErrors: [], ipcCapture: false };
+    const append = (list, entry) => { list.push(entry); if (list.length > 60) list.shift(); };
+    const observe = contents => {
+      contents.on('console-message', (event, level, message, line, sourceId) => {
+        const details = typeof event?.message === 'string' ? event : { level, message, lineNumber: line, sourceId };
+        append(diagnostics.messages, { type: 'console', level: details.level, message: String(details.message).slice(0, 2000), source: String(details.sourceId || '').slice(0, 300), line: details.lineNumber });
+      });
+      contents.on('render-process-gone', (_event, details) => append(diagnostics.messages, { type: 'renderer-gone', reason: details.reason, exitCode: details.exitCode }));
+      contents.on('did-fail-load', (_event, code, description, url) => append(diagnostics.messages, { type: 'load-failed', code, description, url: String(url).slice(0, 500) }));
+    };
+    for (const window of BrowserWindow.getAllWindows()) observe(window.webContents);
+    app.on('web-contents-created', (_event, contents) => observe(contents));
+    session.defaultSession.webRequest.onErrorOccurred(details => {
+      if (/^(atelier|file):/.test(details.url)) append(diagnostics.messages, { type: 'local-resource-failed', url: details.url.slice(0, 500), error: details.error });
+    });
+    // Test-only observation of the pinned Electron handler registry: keep the
+    // original sender checks, return values and rejection behavior unchanged.
+    // The production handler intentionally hides detailed worker error text.
+    const handlers = ipcMain._invokeHandlers;
+    if (!(handlers instanceof Map)) return;
+    for (const [channel, errorIndex] of [['atelier:faceReady', 0], ['atelier:completeFaceTask', 2]]) {
+      const original = handlers.get(channel);
+      if (typeof original !== 'function') continue;
+      ipcMain.removeHandler(channel);
+      ipcMain.handle(channel, (event, ...args) => {
+        if (typeof args[errorIndex] === 'string' && args[errorIndex]) append(diagnostics.faceErrors, { channel, message: args[errorIndex].slice(0, 8000) });
+        return original(event, ...args);
+      });
+      diagnostics.ipcCapture = true;
+    }
+  });
+}
 async function stubDirectory(path) {
   await application.evaluate(({ dialog }, directory) => {
     dialog.showOpenDialog = async (_window, options) => {
@@ -187,6 +225,7 @@ try {
     assert.equal(await application.evaluate(({ app }) => app.getPath('userData')), profile);
     markStage('install test-only external network guards');
     await networkGuard();
+    await diagnosticCapture();
     markStage('wait for the first application window');
     const page = await application.firstWindow(); page.on('pageerror', error => pageErrors.push(error.message));
     markStage('wait for synthetic fixture in the library');
@@ -304,6 +343,13 @@ try {
   }
 } catch (error) {
   console.error(`[local-ai-qa] failure while: ${stage}: ${error.message}`);
+  if (application) try {
+    const diagnostics = await application.evaluate(() => globalThis.__localAIQA?.diagnostics ?? null);
+    console.error('[local-ai-qa] worker diagnostics: ' + JSON.stringify(diagnostics));
+    if (applicationStderr.trim()) console.error('[local-ai-qa] application stderr (last 64 KiB):\n' + applicationStderr.trim());
+    await mkdir(screenshotDirectory, { recursive: true });
+    await writeFile(join(screenshotDirectory, 'local-ai-failure-diagnostics.json'), JSON.stringify({ stage, diagnostics, applicationStderr }, null, 2) + '\n');
+  } catch (diagnosticError) { console.error('[local-ai-qa] cannot collect diagnostics: ' + diagnosticError.message); }
   if (application) try { await mkdir(screenshotDirectory, { recursive: true }); await (await application.firstWindow()).screenshot({ path: join(screenshotDirectory, 'local-ai-failure.png') }); } catch { /* Preserve the original failure. */ }
   error.message = `[${stage}] ${error.message}`; throw error;
 } finally {

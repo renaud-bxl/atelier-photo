@@ -78,6 +78,9 @@ async function windowsQA(target,temporary){
   await run(powershell,['-NoProfile','-NonInteractive','-Command',"$ErrorActionPreference='Stop'; Expand-Archive -LiteralPath $env:ATELIER_QA_ARCHIVE -DestinationPath $env:ATELIER_QA_EXTRACTED"],{
     environment:{...process.env,ATELIER_QA_ARCHIVE:archive,ATELIER_QA_EXTRACTED:extracted},timeout:180000});
   await exercise(join(extracted,target.executable),{verifyDLLs:true,label:'final Windows ZIP'});
+  await run(powershell,['-NoProfile','-NonInteractive','-File',join(root,'Tests','install-windows.ps1'),
+    '-InstallerPath',join(root,'scripts','install.ps1'),'-ArchivePath',archive,'-Version',packageJSON.version,
+    '-WorkingDirectory',join(temporary,'terminal installer with spaces')],{timeout:180000});
   let installStarted=false,failure;
   try{
     installStarted=true;

@@ -17,15 +17,25 @@ async function verifyWindowsRuntimeModules(application){
   assert.ok(process.env.ATELIER_PACKAGED_EXE,'DLL provenance requires an actual packaged executable.');
   const executable=await realpath(process.env.ATELIER_PACKAGED_EXE),applicationRoot=await realpath(dirname(executable));
   assert.equal((await realpath(await application.evaluate(({app})=>app.getPath('exe')))).toLowerCase(),executable.toLowerCase());
-  const pid=application.process().pid;
+  // Playwright uses shell:true on Windows; process().pid can name cmd.exe.
+  // Read the PID from the actual Electron main process connected to the inspector.
+  const mainProcess=await application.evaluate(()=>({pid:process.pid,execPath:process.execPath,arch:process.arch,type:process.type}));
+  assert.equal(mainProcess.type,'browser');assert.equal(mainProcess.arch,'x64');
+  assert.equal((await realpath(mainProcess.execPath)).toLowerCase(),executable.toLowerCase());
+  const pid=mainProcess.pid;
+  console.log('ATELIER_PROCESS_IDENTITY '+JSON.stringify({...mainProcess,launcherPid:application.process().pid}));
   assert.ok(Number.isSafeInteger(pid)&&pid>0,'The exact application process must still be running.');
   const powershell=join(process.env.SystemRoot||'C:\\Windows','System32','WindowsPowerShell','v1.0','powershell.exe');
   // Get-Process -Module is read-only and inspects only our own x64 application.
   // https://learn.microsoft.com/powershell/module/microsoft.powershell.management/get-process
-  const script=`$ErrorActionPreference='Stop'; [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); $atelierModules=@(Get-Process -Id ${pid} -Module -ErrorAction Stop | Where-Object { $_.ModuleName -match '^(vcruntime140(_1)?|msvcp140|vcomp140)\\.dll$' } | Select-Object ModuleName,FileName); ConvertTo-Json -InputObject $atelierModules -Compress`;
+  const script=`$ErrorActionPreference='Stop'; [Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); $atelierModules=@(Get-Process -Id ${pid} -Module -ErrorAction Stop | Select-Object ModuleName,FileName); ConvertTo-Json -InputObject $atelierModules -Compress`;
   const {stdout}=await promisify(execFile)(powershell,['-NoProfile','-NonInteractive','-Command',script],{windowsHide:true,timeout:20000,maxBuffer:1024*1024,encoding:'utf8'});
-  const modules=JSON.parse(stdout.replace(/^\uFEFF/,'').trim());
-  assert.ok(Array.isArray(modules),'PowerShell must return a module array.');
+  const inventory=JSON.parse(stdout.replace(/^\uFEFF/,'').trim());
+  assert.ok(Array.isArray(inventory),'PowerShell must return a module array.');
+  // Filter in one language, avoiding double escaping between JavaScript and PS.
+  const modules=inventory.filter(item=>/^(vcruntime140(_1)?|msvcp140|vcomp140)[.]dll$/i.test(item.ModuleName));
+  console.log('ATELIER_NATIVE_MODULE_INVENTORY '+JSON.stringify(modules));
+  assert.ok(inventory.some(item=>/^node[.]napi[.]node$/i.test(item.ModuleName)),'The native LibRaw addon must be present in the running application.');
   // libraw@0.1.0 win32-x64 PE imports these three directly; VCOMP140 is
   // delay-loaded and an individual RAW fixture need not invoke OpenMP.
   for(const required of ['vcruntime140.dll','vcruntime140_1.dll','msvcp140.dll'])assert.ok(modules.some(item=>item.ModuleName?.toLowerCase()===required),`${required} must be loaded after actual RAW processing.`);
