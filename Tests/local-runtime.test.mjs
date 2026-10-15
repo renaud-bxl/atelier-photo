@@ -23,7 +23,7 @@ test('local settings normalize two independent loopback engines without storing 
   assert.equal(config.ollamaURL, 'http://127.0.0.1:11435/'); assert.equal(config.comfyURL, 'http://[::1]:8189/');
   assert.equal(config.model, 'qwen3-vl:2b-instruct'); assert.equal(config.comfyModels.diffusion, 'flux-2-klein-4b.safetensors');
   assert.equal('apiKey' in config, false); assert.equal('provider' in config, false); assert.equal('workflow' in config, false);
-  assert.deepEqual(Object.keys(config).sort(), ['comfyModels', 'comfyURL', 'model', 'modelsDirectory', 'ollamaURL']);
+  assert.deepEqual(Object.keys(config).sort(), ['comfyModels', 'comfyURL', 'engineMode', 'model', 'modelsDirectory', 'ollamaURL']);
   assert.deepEqual(normalizeLocalConfig(), DEFAULT_LOCAL_AI);
 });
 

@@ -30,6 +30,7 @@ La détection s’exécute localement sur des aperçus auto-orientés de 1 600 p
 - [Electron](https://github.com/electron/electron), MIT, et ses composants Chromium/Node.js sont fournis avec leurs licences et notices de distribution.
 - [React](https://github.com/facebook/react), MIT.
 - [Lucide](https://github.com/lucide-icons/lucide), ISC.
+- [node-tar](https://github.com/isaacs/node-tar), version 7.5.22, BlueOak-1.0.0, et [yauzl](https://github.com/thejoshwolfe/yauzl), version 3.4.0, MIT : extraction des archives du moteur IA facultatif. Les fichiers de licence sont conservés avec les paquets.
 - Vite, MIT, et ses dépendances servent à construire l’interface ; Playwright, Apache 2.0, sert aux vérifications de développement.
 
 Les licences présentes dans les paquets distribués doivent être conservées lors du conditionnement. La licence MIT d’Atelier Photo n’annule pas les conditions applicables à ses dépendances.
@@ -56,7 +57,7 @@ OpenAI/Gemini produisent des bordures depuis un aperçu réduit. L’application
 
 ## Moteurs IA locaux facultatifs
 
-Le client communique avec un Ollama ou un ComfyUI installé séparément par l’utilisateur. Aucun runtime Ollama/ComfyUI ni poids Qwen3-VL/FLUX n’est redistribué dans ce paquet. Ollama est MIT, ComfyUI est GPL v3 ; leurs propres dépendances et modèles conservent leurs licences. Les profils proposés sont Qwen3-VL Instruct 2B/4B/8B et FLUX.2 Klein 4B Distilled sous Apache 2.0. Les modèles 9B à conditions différentes ne font pas partie du profil accepté.
+Le client propose soit un Ollama privé téléchargé à la demande depuis la release officielle v0.40.4, soit un Ollama ou ComfyUI installé séparément par l’utilisateur. Aucun runtime Ollama/ComfyUI ni poids Qwen3-VL/FLUX n’est embarqué dans l’installateur photo. Le moteur Ollama téléchargé conserve son MIT et les notices de ses bibliothèques ; les fichiers d’origine sont vérifiés avant extraction. Ollama est MIT, ComfyUI est GPL v3 ; leurs propres dépendances et modèles conservent leurs licences. Les profils proposés sont Qwen3-VL Instruct 2B/4B/8B et FLUX.2 Klein 4B Distilled sous Apache 2.0. Les modèles 9B à conditions différentes ne font pas partie du profil accepté.
 
 Le graphe API fixe d’édition suit le [template officiel ComfyUI Klein 4B Distilled](https://github.com/Comfy-Org/workflow_templates/blob/main/templates/image_flux2_klein_image_edit_4b_distilled.json). Les routes et limites de notre client sont documentées dans [LOCAL-AI](LOCAL-AI.md). La même protection RGBA16 du centre s’applique aux agrandissements locaux.
 

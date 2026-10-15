@@ -1,8 +1,18 @@
-# Atelier Photo 0.1.0 — Bêta publique
+# Atelier Photo 0.2.0 — Bêta publique
 
 Version bêta publique : un atelier photo indépendant, gratuit et en douze langues, avec une interface noire et bleue. Les dons restent facultatifs, y compris 0 €.
 
-La [page d’installation et son mode d’emploi](https://renaud-bxl.github.io/atelier-photo/) sont disponibles dans les douze langues du logiciel. Le guide explique comment connecter une IA locale ou les clés API de l’utilisateur. Cette bêta est destinée à recueillir des retours ; ses limites sont détaillées ci-dessous.
+Cette version permet de **télécharger et installer une IA locale directement dans les réglages d’Atelier Photo**, sans clé API ni installation système. Choisir « IA locale », « Utiliser le moteur intégré », puis vérifier cet ordinateur et installer le moteur. Télécharger ensuite Qwen3-VL 2B, 4B ou 8B selon les ressources mesurées, tester et enregistrer.
+
+- Runtime officiel Ollama 0.40.4 privé, avec vérification de taille/SHA-256, installation temporaire puis validation, progression et annulation.
+- Modèles facultatifs téléchargés séparément ; budget mémoire et stockage vérifié sur chaque ordinateur. Aucune accélération GPU n’est promise sans mesure.
+- Démarrage et arrêt dans l’application ; arrêt du moteur privé quand Atelier Photo quitte. Le suivi des téléchargements reste accessible après fermeture puis réouverture des réglages.
+- Les réglages d’un Ollama externe sont conservés et restent utilisables. ComfyUI, pour la génération de pixels, reste une installation avancée séparée.
+- Boutons, états et messages disponibles dans les douze langues du logiciel. Aucun moteur ni modèle lourd n’est imposé dans l’installateur photo.
+
+La [page d’installation et son mode d’emploi](https://renaud-bxl.github.io/atelier-photo/) sont disponibles dans les douze langues. Cette bêta est destinée à recueillir des retours ; ses limites sont détaillées ci-dessous.
+
+## Fonctions photo conservées
 
 - Bibliothèque paginée, sélections, notes, styles et projets non destructifs.
 - Développement RAW à partir des données capteur et traitement RGB16 jusqu’à l’encodage final PNG/TIFF16.
@@ -19,7 +29,7 @@ Les binaires n’ont pas de signature commerciale Apple/Windows ni de notarisati
 
 ## Limites de cette version
 
-Cette version reste une première publication et ne promet pas la précision des retouches propriétaires d’Evoto. Les masques portrait nécessitent une détection correcte du visage ; l’aperçu spatial ne reconstruit pas les parties cachées. Les modèles génératifs utilisent des aperçus réduits et leurs nouvelles zones ne gagnent pas un détail photographique natif 16 bits par l’export.
+Cette version reste une bêta et ne promet pas la précision des retouches propriétaires d’Evoto. Les masques portrait nécessitent une détection correcte du visage ; l’aperçu spatial ne reconstruit pas les parties cachées. Les modèles génératifs utilisent des aperçus réduits et leurs nouvelles zones ne gagnent pas un détail photographique natif 16 bits par l’export.
 
 L’IA locale n’a pas de frais API, mais demande du matériel, du stockage, de l’électricité et du temps. Le diagnostic donne des estimations ; le test d’un modèle mesure une réponse, pas sa qualité esthétique. Un essai réel Qwen3-VL 2B a révélé des réglages non souhaités : le cadrage local est désormais conservé et les commandes portrait sont neutralisées sans visage détecté. Examiner une proposition avant de lancer un grand lot. ComfyUI et la qualité des modèles sur de vrais portraits/paysages restent à valider séparément.
 

@@ -14,15 +14,23 @@ import { verifyModelAssets } from './model-assets.mjs';
 import {createOllamaClient} from './local-ai.mjs';
 import {DEFAULT_LOCAL_AI,normalizeLocalConfig,createLocalDiagnostics,assessLocalGeneration} from './local-runtime.mjs';
 import {protectLocalRecommendation} from './local-recommendation.mjs';
+import {createManagedOllama} from './managed-ollama.mjs';
+import {createLocalEngineService} from './local-engine-service.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const isTest = Boolean(process.env.ATELIER_TEST_DATA);
 if (isTest) app.setPath('userData', process.env.ATELIER_TEST_DATA);
 app.setName('Atelier Photo');
+// One owner per catalogue/profile also prevents competing private AI processes.
+if(!app.requestSingleInstanceLock())app.exit(0);
 protocol.registerSchemesAsPrivileged([{ scheme: 'atelier', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
 sharp.cache({ memory: 64, files: 16, items: 80 }); sharp.concurrency(2);
 let window, faceWindow, catalog, settings = {}, vault = {}, encryptedCapability = null;
-let job = null, aiController = null, localPullController = null;
+app.on('second-instance',()=>{
+  if(window&&!window.isDestroyed()){if(window.isMinimized())window.restore();window.show();window.focus();}
+  else app.emit('activate');
+});
+let job = null, aiController = null, localEngines;
 const localDiagnostics=createLocalDiagnostics();
 const faceCache = new Map(), faceRequests = new Map(), pendingFaces = new Map();
 const previewCache = new Map(), pendingPreview = new Map(), pendingThumbnails = new Map(), previewRevision = new Map();
@@ -31,7 +39,7 @@ const defaults = {
   provider: 'openai',
   models: { openai: 'gpt-6-luna', gemini: 'gemini-3.8-flash', claude: 'claude-sonnet-5-5' },
   imageModels: { openai: 'gpt-image-2.5-sunburst', gemini: 'gemini-3.1-flash-image', claude: '' },
-  localAI:DEFAULT_LOCAL_AI
+  localAI:{...DEFAULT_LOCAL_AI,engineMode:'managed'}
 };
 const dataPath = name => join(app.getPath('userData'), name);
 const progress = state => { if (window && !window.isDestroyed()) window.webContents.send('atelier:progress', state); };
@@ -70,8 +78,9 @@ const ollama = config => createOllamaClient({endpoint:config.ollamaURL});
 async function analyse(config,options,item){
   if(config.provider!=='local')return recommend(config);
   if(!options)fail('Réglages IA locale manquants.');
-  await localDiagnostics.checkModel(options.model,options);
-  const result=await ollama(options).recommend({...config,model:options.model});
+  const effective=await localEngines.resolve(options,{start:true,signal:config.signal});
+  await localDiagnostics.checkModel(effective.model,effective);
+  const result=await ollama(effective).recommend({...config,model:effective.model});
   let facesDetected=false;
   if(portrait(result.adjustments)){
     try{facesDetected=Boolean((await detectFaces(item.id))?.faces?.length);}catch(error){if(config.signal?.aborted)throw error;}
@@ -291,7 +300,7 @@ function registerProtocol() {
 }
 
 async function importEntries(entries, folder = false) {
-  if (job) fail('Une tâche est déjà en cours.');
+  if (job||localEngines?.busy) fail('Une tâche est déjà en cours.');
   job = { cancelled: false }; const current = job;
   let added = 0, skipped = 0, found = 0, batch = []; const errors = [];
   async function flush() {
@@ -359,7 +368,7 @@ async function loadLUT(id) {
   lutCache.set(id,data);while(lutCache.size>4)lutCache.delete(lutCache.keys().next().value);return data;
 }
 async function importStyleEntries(entries) {
-  if(job)fail('Une tâche est déjà en cours.');
+  if(job||localEngines?.busy)fail('Une tâche est déjà en cours.');
   const {parseXMP,parseCube}=await import('./preset-import.mjs');
   const current=job={cancelled:false};let added=0,skipped=0,partial=0,unavailable=0;const errors=[];
   const existing=catalog.presets(),known=new Set(existing.map(p=>p.adjustments?._import?.hash).filter(Boolean));
@@ -424,9 +433,9 @@ function registerIPC() {
   handle('savePreset', (name,a) => catalog.savePreset(name, normalizeAdjustments(a)));
   handle('deletePreset', id => catalog.removePreset(id));
   handle('detectFaces', id => detectFaces(id));
-  handle('cancelJob', () => { if (job) { job.cancelled = true; if (job.kind === 'ai') aiController?.abort(); } localPullController?.abort(); });
+  handle('cancelJob', () => { if (job) { job.cancelled = true; if (job.kind === 'ai') aiController?.abort(); } localEngines.cancel(); });
   handle('sync', async (selection, adjustments) => {
-    if (job) fail('Une tâche est déjà en cours.');
+    if (job||localEngines?.busy) fail('Une tâche est déjà en cours.');
     const a = normalizeAdjustments(adjustments); const current = job = { cancelled: false }; let count = 0;
     try {
       // Snapshot IDs: changing the edited filter during pagination must not skip rows.
@@ -440,7 +449,7 @@ function registerIPC() {
     } finally { job = null; progress(null); }
   });
   handle('exportPhotos', async (selection, options = {}) => {
-    if (job) fail('Une tâche est déjà en cours.');
+    if (job||localEngines?.busy) fail('Une tâche est déjà en cours.');
     const r = await dialog.showOpenDialog(window, { title:'Choisir le dossier d’export',properties:['openDirectory','createDirectory'] }); if (r.canceled) return null;
     const current = job = { cancelled:false }; let count = 0; const errors = []; const directory = r.filePaths[0];
     const format = ['jpeg','png','tiff'].includes(options.format) ? options.format : 'jpeg';
@@ -492,26 +501,27 @@ function registerIPC() {
     return settingsPublic();
   });
   handle('deleteKey', async provider => { cloudProvider(provider);sessionKeys.delete(provider);delete vault[provider];await atomicJSON(dataPath('keys.encrypted.json'),vault);return settingsPublic(); });
-  handle('localHardware',input=>localDiagnostics.hardware(localOptions(input)));
-  handle('localRecommendations',input=>localDiagnostics.recommendations(localOptions(input)));
+  handle('localHardware',input=>localEngines.hardware(localOptions(input)));
+  handle('localRecommendations',input=>localEngines.recommendations(localOptions(input)));
   handle('chooseLocalModelDirectory',async()=>{const result=await dialog.showOpenDialog(window,{title:'Choisir le dossier des modèles Ollama',properties:['openDirectory']});return result.canceled?null:result.filePaths[0];});
-  handle('localStatus',async input=>{try{return await ollama(localOptions(input)).status();}catch(error){return {available:false,models:[],error:error.message};}});
+  handle('localStatus',async input=>{try{const options=await localEngines.resolve(localOptions(input));return await ollama(options).status();}catch(error){return {available:false,models:[],error:error.message};}});
+  const idleLocalEngine=()=>{if(job||aiController||localEngines.busy)fail('Une tâche est déjà en cours.');};
+  handle('localEngineStatus',()=>localEngines.status());
+  handle('localEngineInstall',()=>{idleLocalEngine();return localEngines.install();});
+  handle('localEngineStart',()=>{idleLocalEngine();return localEngines.start();});
+  handle('localEngineStop',()=>{idleLocalEngine();return localEngines.stop();});
+  handle('cancelLocalEngineInstall',()=>localEngines.cancel('runtime'));
   handle('localPull',async input=>{
-    if(job||aiController||localPullController)fail('Une tâche est déjà en cours.');
-    const options=localOptions(input),controller=localPullController=new AbortController();
-    try{
-      await localDiagnostics.checkModel(options.model,options,true);
-      return await ollama(options).pullModel(options.model,{signal:controller.signal,onProgress:event=>progress({...event,text:'Téléchargement du modèle…'})});
-    }catch(error){if(controller.signal.aborted)return {cancelled:true};throw error;}
-    finally{if(localPullController===controller)localPullController=null;progress(null);}
+    idleLocalEngine();return localEngines.pull(localOptions(input));
   });
-  handle('cancelLocalPull',()=>localPullController?.abort());
+  handle('cancelLocalPull',()=>localEngines.cancel('model'));
   handle('localBenchmark',async input=>{
-    if(job||aiController||localPullController)fail('Une tâche est déjà en cours.');
-    const options=localOptions(input),controller=aiController=new AbortController();
+    idleLocalEngine();
+    const controller=aiController=new AbortController();
     const current=job={kind:'ai',cancelled:false};
     progress({kind:'ai',text:'Test local en cours…'});
     try{
+      const options=await localEngines.resolve(localOptions(input),{start:true,signal:controller.signal});
       await localDiagnostics.checkModel(options.model,options);
       const imageData=await sharp({create:{width:192,height:128,channels:3,background:'#567c94'}}).png().toBuffer();
       const result=await ollama(options).recommend({imageData,model:options.model,language:settings.language||'fr',instruction:'Analyse cette image de test synthétique et propose tous les réglages du schéma. Garde les contrôles portrait et géométrie neutres.',signal:controller.signal});
@@ -534,7 +544,7 @@ function registerIPC() {
   });
   handle('cancelAI', () => { if (job?.kind === 'ai') job.cancelled = true; aiController?.abort(); });
   handle('ai', async ({id,instruction,mode,margins}) => {
-    if (job||aiController||localPullController) fail('Une tâche est déjà en cours.');
+    if (job||aiController||localEngines?.busy) fail('Une tâche est déjà en cours.');
     if(!['recommend','edit','expand'].includes(mode))fail('Mode IA non valide.');
     if(mode==='expand'&&typeof instruction==='string'&&!instruction.trim())instruction='Prolonge naturellement la scène dans les marges demandées.';
     const item = photo(id), provider = validProvider(settings.provider), apiKey = keyFor(provider);
@@ -545,7 +555,7 @@ function registerIPC() {
     const current=job={kind:'ai',cancelled:false};
     try {
       if(provider==='local'){
-        if(mode==='recommend'){await localDiagnostics.checkModel(localConfig.model,localConfig);await ollama(localConfig).inspectModel(localConfig.model,{signal:controller.signal});}
+        if(mode==='recommend'){const effective=await localEngines.resolve(localConfig,{start:true,signal:controller.signal});await localDiagnostics.checkModel(effective.model,effective);await ollama(effective).inspectModel(effective.model,{signal:controller.signal});}
         else await checkLocalGeneration(localConfig,item,mode,margins,controller.signal);
       }
       // Recommendations are absolute settings; analyse the original to avoid
@@ -570,7 +580,7 @@ function registerIPC() {
     } finally { if(aiController===controller)aiController = null;if(job===current)job=null; }
   });
   handle('aiBatch', async (selection, { instruction,expectedCount } = {}) => {
-    if (job || aiController||localPullController) fail('Une tâche est déjà en cours.');
+    if (job || aiController||localEngines?.busy) fail('Une tâche est déjà en cours.');
     const provider = validProvider(settings.provider), apiKey = keyFor(provider);
     const localConfig=provider==='local'?localOptions():null;
     if (provider!=='local'&&!apiKey) fail(`Ajoutez votre clé ${provider} dans les réglages IA.`);
@@ -623,7 +633,7 @@ function registerIPC() {
     await atomicJSON(destination,project);return destination;
   });
   handle('openProject', async () => {
-    if(job)fail('Une tâche est déjà en cours.');
+    if(job||localEngines?.busy)fail('Une tâche est déjà en cours.');
     const r=await dialog.showOpenDialog(window,{properties:['openFile'],filters:[{name:'Projet Atelier Photo',extensions:['atelier']}]});if(r.canceled)return null;
     const stat=await fs.stat(r.filePaths[0]);if(stat.size>100*1024*1024)fail('Projet trop volumineux.');
     const data=await readJSON(r.filePaths[0],null);if(![1,2].includes(data?.version)||!Array.isArray(data.photos))fail('Projet non valide.');
@@ -678,6 +688,7 @@ app.whenReady().then(async () => {
   await fs.mkdir(app.getPath('userData'),{recursive:true});
   for(const directory of ['thumbnails','generated','luts','raw-cache']) await fs.mkdir(dataPath(directory),{recursive:true});
   catalog=new Catalog(app.getPath('userData'));
+  localEngines=createLocalEngineService({engine:createManagedOllama({userDataDirectory:app.getPath('userData')}),diagnostics:localDiagnostics,onProgress:progress});
   settings={...defaults,...await readJSON(dataPath('settings.json'),{} )};
   settings.models={...defaults.models,...settings.models};settings.imageModels={...defaults.imageModels,...settings.imageModels};
   try{settings.localAI=normalizeLocalConfig(settings.localAI);}catch{settings.localAI=normalizeLocalConfig();}
@@ -690,4 +701,14 @@ app.whenReady().then(async () => {
   app.on('activate',()=>{if(!window)window=makeWindow();});
 }).catch(error=>{console.error('Atelier Photo : démarrage impossible.',error.message);app.exit(1);});
 app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit();});
-app.on('before-quit',()=>{job&&(job.cancelled=true);aiController?.abort();localPullController?.abort();catalog?.close();});
+let shutdownStarted=false,shutdownComplete=false;
+app.on('before-quit',event=>{
+  if(shutdownComplete)return;
+  event.preventDefault();
+  if(shutdownStarted)return;
+  shutdownStarted=true;
+  job&&(job.cancelled=true);aiController?.abort();
+  Promise.resolve(localEngines?.shutdown()).catch(error=>console.error('Arrêt du moteur local :',error.message)).finally(()=>{
+    catalog?.close();shutdownComplete=true;app.quit();
+  });
+});

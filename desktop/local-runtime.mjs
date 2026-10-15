@@ -5,10 +5,12 @@ import {inspectHardware,assessLocalModel} from './hardware-profile.mjs';
 import {normalizeLoopbackURL} from './loopback-http.mjs';
 import {LOCAL_VISION_MODELS} from './local-ai.mjs';
 
-export const DEFAULT_LOCAL_AI=Object.freeze({ollamaURL:'http://127.0.0.1:11434/',model:'',comfyURL:'http://127.0.0.1:8188/',modelsDirectory:'',comfyModels:{diffusion:'',textEncoder:'',vae:''}});
+export const DEFAULT_LOCAL_AI=Object.freeze({engineMode:'external',ollamaURL:'http://127.0.0.1:11434/',model:'',comfyURL:'http://127.0.0.1:8188/',modelsDirectory:'',comfyModels:{diffusion:'',textEncoder:'',vae:''}});
 const fail=message=>{throw new Error(message);};
 export function normalizeLocalConfig(input={}){
   if(!input||typeof input!=='object'||Array.isArray(input))fail('Réglages IA locale non valides.');
+  const engineMode=input.engineMode??'external';
+  if(!['managed','external'].includes(engineMode))fail('Mode du moteur local non valide.');
   const model=input.model??'';
   if(typeof model!=='string'||model.length>160||(model&&!/^[a-zA-Z0-9][a-zA-Z0-9._/:-]*$/.test(model)))fail('Nom de modèle local non valide.');
   const modelsDirectory=input.modelsDirectory??'';
@@ -19,7 +21,7 @@ export function normalizeLocalConfig(input={}){
     if(typeof name!=='string'||name.length>512||/[\u0000-\u001f\u007f]/.test(name))fail('Nom de modèle ComfyUI non valide.');
     comfyModels[key]=name;
   }
-  return {ollamaURL:normalizeLoopbackURL(input.ollamaURL??DEFAULT_LOCAL_AI.ollamaURL),model,
+  return {engineMode,ollamaURL:normalizeLoopbackURL(input.ollamaURL??DEFAULT_LOCAL_AI.ollamaURL),model,
     comfyURL:normalizeLoopbackURL(input.comfyURL??DEFAULT_LOCAL_AI.comfyURL,8188),modelsDirectory,comfyModels};
 }
 

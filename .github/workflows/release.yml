@@ -2,6 +2,11 @@ name: Build and release Atelier Photo
 
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the validated beta after every platform succeeds
+        type: boolean
+        default: false
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
@@ -67,8 +72,16 @@ jobs:
         run: node -e "const p=require('./package.json'); if(process.env.RELEASE_TAG !== 'v'+p.version) throw new Error('The release tag must match package.json version')"
       - name: Test
         run: npm test
+      - name: Install, start and stop the real private AI runtime without downloading model weights
+        run: node scripts/qa-managed-ollama.mjs
       - name: Build the interface
         run: npm run build
+      - name: Exercise integrated AI installation controls in isolated Electron
+        if: runner.os != 'Linux'
+        run: node Tests/managed-ai-electron.mjs
+      - name: Exercise integrated AI installation controls on Linux
+        if: runner.os == 'Linux'
+        run: xvfb-run -a node Tests/managed-ai-electron.mjs
       - name: Package without publishing
         run: npx --no-install electron-builder ${{ matrix.args }} --publish never
       - name: Smoke test the packaged Linux backend
@@ -112,7 +125,7 @@ jobs:
             release/AtelierPhoto-*.deb
             release/AtelierPhoto-Linux-native-sources.tar.xz
       - name: Preserve synthetic functional QA evidence
-        if: always() && runner.os != 'macOS'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: functional-qa-${{ matrix.id }}
@@ -121,6 +134,8 @@ jobs:
           path: |
             test-artifacts/local-ai*.json
             test-artifacts/local-ai*.png
+            test-artifacts/managed-runtime-*.json
+            test-artifacts/managed-ai-*.png
 
   assemble:
     name: Assemble installers and SHA-256 checksums
@@ -147,7 +162,7 @@ jobs:
 
   publish:
     name: Publish only for a deliberate version tag
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && inputs.publish)
     needs: assemble
     runs-on: ubuntu-22.04
     permissions:
@@ -158,8 +173,17 @@ jobs:
         with:
           name: installers-and-checksums
           path: release-assets
+      - name: Resolve the version from the exact validated manual build
+        if: github.event_name == 'workflow_dispatch'
+        run: node -e "const fs=require('node:fs');const p=require('./package.json');if(!/^\d+\.\d+\.\d+$/.test(p.version))throw new Error('Invalid release version');fs.appendFileSync(process.env.GITHUB_ENV,'MANUAL_RELEASE_TAG=v'+p.version+'\n')"
       - name: Create the GitHub release
+        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
-        run: gh release create "$RELEASE_TAG" release-assets/* --verify-tag --title "Atelier Photo $RELEASE_TAG" --notes-file docs/RELEASE-NOTES.md
+        run: gh release create "$RELEASE_TAG" release-assets/* --verify-tag --title "Atelier Photo $RELEASE_TAG — Bêta publique" --notes-file docs/RELEASE-NOTES.md
+      - name: Publish the exact validated manual build and create its version tag
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$MANUAL_RELEASE_TAG" release-assets/* --target "$GITHUB_SHA" --title "Atelier Photo $MANUAL_RELEASE_TAG — Bêta publique" --notes-file docs/RELEASE-NOTES.md

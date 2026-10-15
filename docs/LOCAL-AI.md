@@ -5,11 +5,25 @@ Le diagnostic concerne l’ordinateur où Atelier Photo est lancé : Mac, Window
 ## Analyse et réglages avec Ollama
 
 1. Ouvrir **Réglages IA → IA locale → Vérifier cet ordinateur**.
-2. Vérifier et sélectionner le dossier où le serveur Ollama stocke réellement les modèles. Ce choix permet de mesurer le bon volume sans modifier les réglages d’Ollama. Le chemin proposé est `~/.ollama/models` sur Mac/Windows et `/usr/share/ollama/.ollama/models` pour le service Linux standard, ou `OLLAMA_MODELS` si cette variable est visible par Atelier Photo. Le service peut avoir une autre configuration. Tant que le dossier n’a pas été confirmé, sa capacité reste « à vérifier » dans l’évaluation : l’espace mesuré ne prouve pas que le serveur y téléchargera les modèles.
-3. Le bouton **Installer le moteur local** ouvre les instructions officielles correspondant au système. Installer et ouvrir Ollama, puis **Détecter les modèles**.
+2. Choisir le moteur **intégré à Atelier Photo** pour que l’application gère son installation et son dossier privé de modèles. Le diagnostic mesure ce dossier sur cet ordinateur.
+3. Cliquer sur **Installer le moteur local** : le téléchargement est explicite, suivi et annulable. Le moteur est vérifié avant extraction, puis démarré sur une adresse privée de cet ordinateur. Aucun droit administrateur, service système ou modification du PATH n’est nécessaire.
 4. Télécharger un profil conseillé ou sélectionner un modèle vision local déjà présent. Aucun téléchargement ne démarre à l’ouverture de la carte.
 5. **Tester ce modèle** utilise une image synthétique, vérifie une réponse JSON complète et affiche une durée. Ce test ne mesure pas la qualité esthétique sur de vraies photos.
 6. Enregistrer, puis demander une proposition de réglages dans l’éditeur. Une proposition individuelle s’applique sur demande et reste annulable. L’analyse d’une sélection applique les réglages progressivement, une photo à la fois.
+
+### Installation intégrée facultative
+
+Le runtime officiel **Ollama 0.40.4** est téléchargé à la demande, séparément du logiciel photo et des poids Qwen. Les quatre cibles sont macOS Apple Silicon, macOS Intel, Windows x64 et Linux x64. La taille de l’archive, le volume réservé et la licence sont affichés avant installation. L’archive Mac universelle fait environ 168 Mo ; les archives Windows/Linux x64 environ 1,47/1,44 Go. Les bibliothèques graphiques expliquent ces différences. Un téléchargement ne signifie pas qu’un pilote ou une accélération graphique a été validé.
+
+Les archives sont verrouillées par taille et SHA-256 à partir de la [release officielle v0.40.4](https://github.com/ollama/ollama/releases/tag/v0.40.4). Une extraction temporaire est publiée seulement après validation ; l’annulation supprime uniquement cette préparation. Les poids, le profil et les journaux se trouvent dans `userData/local-ai/ollama`, sans remplacer une installation Ollama externe. Les notices et licences fournies avec le runtime sont conservées.
+
+Le processus enfant utilise un HOME/USERPROFILE privé, `OLLAMA_NO_CLOUD=1`, un seul modèle chargé et un seul calcul simultané. Il écoute uniquement sur la boucle locale ; son port n’est pas sauvegardé comme une adresse externe. L’application vérifie que le service appartient à son enfant avant de l’utiliser. Le moteur peut être arrêté depuis les réglages et s’arrête lorsque l’application quitte. Il est redémarré à la prochaine demande explicite d’analyse si ce mode a été enregistré. Ouvrir les réglages ne télécharge rien et ne démarre aucun moteur. Une tâche d’installation peut être suivie et annulée après fermeture puis réouverture des réglages.
+
+Les modèles Qwen restent trois téléchargements distincts, avec leurs tailles, budgets et licences. L’état « installé » ne valide pas une analyse : utiliser **Tester ce modèle** avant de travailler sur ses photos. L’installation ne nécessite aucune clé API et n’entraîne aucune facturation API.
+
+### Réutiliser un Ollama externe
+
+La connexion à un moteur déjà installé reste disponible séparément. Les anciens réglages restent dans ce mode à la mise à jour. Vérifier et sélectionner le dossier où ce serveur stocke réellement les modèles : ce choix mesure le bon volume sans modifier sa configuration. Les valeurs inférées sont `~/.ollama/models` sur Mac/Windows et `/usr/share/ollama/.ollama/models` pour le service Linux standard, ou `OLLAMA_MODELS` si visible par Atelier Photo. Un dossier non confirmé reste « à vérifier » et ne prouve pas la capacité du volume réellement utilisé par ce serveur. Atelier Photo ne démarre, n’arrête et ne remplace aucun service externe.
 
 | Profil livré | Poids approximatifs à télécharger | RAM totale minimale retenue par l’application | RAM conseillée pour un premier essai |
 | --- | ---: | ---: | ---: |

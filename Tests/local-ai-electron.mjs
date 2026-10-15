@@ -244,6 +244,8 @@ try {
     const panel = dialog.getByTestId('local-ai-panel'); await panel.waitFor();
     assert.equal(await panel.getByText('Aucune clé API nécessaire.', { exact: true }).count(), 1);
     assert.equal(await dialog.locator('input[type="password"]').count(), 0);
+    await panel.getByRole('button', { name: 'Utiliser une installation existante', exact: true }).click();
+    await panel.getByText('Installation existante · options avancées', { exact: true }).evaluate(element => { element.parentElement.open = true; });
     await panel.getByLabel('Adresse du moteur local', { exact: true }).fill(endpoint);
     await stubDirectory(modelDirectory);
     await panel.getByRole('button', { name: 'Choisir le dossier des modèles', exact: true }).click();
@@ -298,7 +300,7 @@ try {
     await listen(server, port);
     await panel.getByRole('button', { name: 'Détecter les modèles', exact: true }).click();
     await panel.getByText('Service local disponible', { exact: true }).waitFor();
-    await panel.getByLabel('Modèle d’analyse local', { exact: true }).selectOption(MODEL);
+    await panel.getByRole('combobox', { name: 'Modèle d’analyse local', exact: true }).selectOption(MODEL);
     await dialog.locator('footer').getByRole('button', { name: 'Enregistrer', exact: true }).click();
     await dialog.waitFor({ state: 'hidden' });
     const settings = await page.evaluate(() => window.atelier.getSettings());
