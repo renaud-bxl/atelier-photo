@@ -80,6 +80,12 @@ function connectPreviewMotion() {
 }
 
 async function initialize() {
+  // Keep one shareable address; asset fingerprints handle cache refreshes.
+  const currentURL = new URL(location.href);
+  if (currentURL.searchParams.has('v')) {
+    currentURL.searchParams.delete('v');
+    history.replaceState(history.state, '', currentURL.href);
+  }
   const language = document.documentElement.lang || 'fr';
   const messages = JSON.parse(document.body.dataset.messages || '{}');
   const t = (key, ...values) => (messages[key] || key).replace(/\{(\d+)\}/g, (match, index) => values[index] ?? match);

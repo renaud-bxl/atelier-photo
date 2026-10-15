@@ -37,6 +37,8 @@ Les messages du navigateur sont embarqués dans un attribut HTML contenant du JS
 
 Les liens CSS et JavaScript portent une version dérivée du SHA-256 de leurs contenus. Une nouvelle page traduite ne réutilise ainsi pas les anciens contrôles français conservés en cache par un navigateur.
 
+L’adresse publique à partager reste `https://renaud-bxl.github.io/atelier-photo/` pour toutes les versions. Les publications actualisent cette même page et les commandes ciblent la dernière release GitHub. Un ancien paramètre `v` est retiré de la barre d’adresse avec `history.replaceState`, sans rechargement ni nouvelle entrée d’historique ; la langue, l’ancre et les autres paramètres sont conservés. Les empreintes des fichiers CSS/JS assurent leur actualisation indépendamment du lien public.
+
 L’aperçu de l’accueil suit légèrement la souris, avec des angles et déplacements bornés. Il revient au repos à la sortie du pointeur, au défilement et à la perte de visibilité. L’effet respecte `prefers-reduced-motion` et s’active uniquement avec un pointeur fin capable de survol ; les appareils tactiles conservent l’aperçu fixe.
 
 Le sélecteur navigue vers un vrai document HTML et conserve l’ancre courante. Il n’y a ni routeur client ni redirection automatique selon le navigateur. Le guide en cinq étapes et ses liens officiels sont accessibles sans JavaScript ; une navigation de langues supplémentaire et le téléchargement GitHub sont alors disponibles dans les éléments `noscript`.
