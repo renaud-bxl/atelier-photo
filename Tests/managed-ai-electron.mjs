@@ -14,9 +14,16 @@ const env={...process.env,ATELIER_TEST_DATA:profile};
 delete env.ELECTRON_RUN_AS_NODE;
 for(const name of ['OPENAI_API_KEY','GEMINI_API_KEY','GOOGLE_API_KEY','ANTHROPIC_API_KEY','CLAUDE_API_KEY'])delete env[name];
 let application;
+let applicationStderr='',processExit=null;
 const errors=[];
 try{
   application=await _electron.launch({executablePath:process.env.ATELIER_PACKAGED_EXE||require('electron'),args:process.env.ATELIER_PACKAGED_EXE?[]:[root],cwd:root,env,chromiumSandbox:true,timeout:30000});
+  application.process().stderr?.on('data',chunk=>{applicationStderr=(applicationStderr+chunk.toString()).slice(-65536);});
+  application.process().on('exit',(code,signal)=>{processExit={code,signal};});
+  // Ready does not mean the application's asynchronous IPC setup has finished.
+  // The first window is created only after registerIPC, so test handlers can
+  // safely replace originals afterwards, including on slow Windows filesystems.
+  const page=await application.firstWindow();page.on('pageerror',error=>errors.push(error.message));
   assert.equal(await application.evaluate(({app})=>app.commandLine.hasSwitch('no-sandbox')),false);
   await application.evaluate(({ipcMain,BrowserWindow},profile)=>{
     const calls=[],model='qwen3-vl:2b-instruct';
@@ -57,7 +64,6 @@ try{
       send(null);resolve(kind==='runtime'?structuredClone(state):{name:model,local:true,capabilities:['vision']});
     }};
   },profile);
-  const page=await application.firstWindow();page.on('pageerror',error=>errors.push(error.message));
   const open=async()=>{
     await page.getByRole('button',{name:'Réglages IA',exact:true}).click();
     const dialog=page.getByRole('dialog');
@@ -104,6 +110,8 @@ try{
   assert.equal(saved.localAI.ollamaURL,'http://127.0.0.1:11434/','private ephemeral port must not overwrite external connection settings');
   assert.deepEqual(errors,[]);
   console.log('ATELIER_MANAGED_UI_OK '+JSON.stringify({simulatedDownloads:true,simulatedInference:true,realElectronIPC:true,diagnosticRequired:true,reopenProgress:true,cancellation:true,modelSelection:true,testRequiredLabel:true,settingsSaved:true}));
+}catch(error){
+  console.error('MANAGED_UI_DIAGNOSTICS',JSON.stringify({processExit,applicationStderr,errors}));throw error;
 }finally{
   await application?.close();await rm(profile,{recursive:true,force:true});
 }
