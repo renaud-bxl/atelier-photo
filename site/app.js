@@ -16,14 +16,14 @@ export function normalizeRepository(value) {
   return repository;
 }
 
-export function buildPayPalURL(amount, business = DEFAULT_CONFIG.paypalBusiness) {
+export function buildPayPalURL(amount, business = DEFAULT_CONFIG.paypalBusiness, itemName = 'Soutien facultatif à Atelier Photo — Renaud') {
   if (!Number.isFinite(amount) || amount <= 0 || amount > 10000) return null;
   if (business !== DEFAULT_CONFIG.paypalBusiness) return null;
   const url = new URL('https://www.paypal.com/donate');
   url.searchParams.set('business', business);
   url.searchParams.set('currency_code', 'EUR');
   url.searchParams.set('amount', amount.toFixed(2));
-  url.searchParams.set('item_name', 'Soutien facultatif à Atelier Photo — Renaud');
+  url.searchParams.set('item_name', itemName);
   return url.href;
 }
 
@@ -37,6 +37,18 @@ export function installationCommand(os, repository) {
 }
 
 async function initialize() {
+  const language = document.documentElement.lang || 'fr';
+  const messages = JSON.parse(document.body.dataset.messages || '{}');
+  const t = (key, ...values) => (messages[key] || key).replace(/\{(\d+)\}/g, (match, index) => values[index] ?? match);
+  const appendArrow = (element, text, arrow) => {
+    element.replaceChildren(document.createTextNode(`${text} `));
+    const icon = document.createElement('span'); icon.textContent = arrow; icon.setAttribute('aria-hidden', 'true'); element.append(icon);
+  };
+  document.querySelector('#site-language')?.addEventListener('change', event => {
+    const destination = new URL(event.target.value, location.href);
+    destination.hash = location.hash;
+    location.assign(destination.href);
+  });
   let config = { ...DEFAULT_CONFIG };
   try {
     const response = await fetch(new URL('config.json', import.meta.url), { cache: 'no-store' });
@@ -60,53 +72,56 @@ async function initialize() {
     const valid = Number.isFinite(amount) && amount >= 0 && amount <= 10000
       && /^\d+(?:[.,]\d{1,2})?$/.test(selected === 'custom' ? customInput.value.replace(',', '.') : selected);
     error.hidden = valid;
-    error.textContent = valid ? '' : 'Choisissez un montant entre 0 et 10 000 €, avec deux décimales au maximum.';
-    const url = valid ? buildPayPalURL(amount, config.paypalBusiness) : null;
+    error.textContent = valid ? '' : t('Choisissez un montant entre 0 et 10 000 €, avec deux décimales au maximum.');
+    const url = valid ? buildPayPalURL(amount, config.paypalBusiness, t('Soutien facultatif à Atelier Photo — Renaud')) : null;
     paypalLink.hidden = !url;
     if (url) {
       paypalLink.href = url;
-      paypalLink.replaceChildren(document.createTextNode(`Ouvrir PayPal — ${amount.toLocaleString('fr-BE', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} € `));
-      const arrow = document.createElement('span'); arrow.textContent = '↗'; arrow.setAttribute('aria-hidden', 'true'); paypalLink.append(arrow);
+      appendArrow(paypalLink, t('Ouvrir PayPal — {0} €', amount.toLocaleString(language, { minimumFractionDigits: 0, maximumFractionDigits: 2 })), '↗');
     } else paypalLink.removeAttribute('href');
     continueButton.classList.toggle('secondary', Boolean(url));
     continueButton.classList.toggle('primary', !url);
-    continueButton.textContent = url ? 'Continuer vers l’installation →' : 'Continuer gratuitement →';
-    note.textContent = url ? 'Le don reste facultatif. Continuez quand vous le souhaitez.' : 'Aucun don requis. L’installation est accessible à tous.';
+    appendArrow(continueButton, t(url ? 'Continuer vers l’installation' : 'Continuer gratuitement'), '→');
+    note.textContent = t(url ? 'Le don reste facultatif. Continuez quand vous le souhaitez.' : 'Aucun don requis. L’installation est accessible à tous.');
   }
   document.querySelectorAll('input[name="amount"]').forEach(input => input.addEventListener('change', () => {
     updateDonation();
     if (input.value === 'custom' && input.checked) customInput.focus();
   }));
   customInput.addEventListener('input', updateDonation);
-  continueButton.addEventListener('click', () => {
+  const showInstallation = (scroll = true) => {
     const installation = document.querySelector('#installation');
     installation.hidden = false;
-    installation.focus({ preventScroll: true });
-    installation.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
-  });
+    if (scroll) {
+      installation.focus({ preventScroll: true });
+      installation.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    }
+  };
+  continueButton.addEventListener('click', () => showInstallation());
+  if (location.hash === '#installation') showInstallation(false);
   updateDonation();
 
   const status = document.querySelector('#publication-status');
   const releasesLink = document.querySelector('#releases-link');
   if (repository) {
-    status.textContent = `Téléchargements disponibles — ${repository}`;
+    status.textContent = t('Téléchargements disponibles — {0}', repository);
     status.classList.add('ready');
     releasesLink.href = `https://github.com/${repository}/releases/latest`;
     releasesLink.hidden = false;
     document.querySelectorAll('.local-hint').forEach(element => {
-      element.textContent = 'Téléchargez le script, consultez-le, puis lancez la seconde commande. Le téléchargement de l’application sera vérifié avec SHA-256.';
+      element.textContent = t('Téléchargez le script, consultez-le, puis lancez la seconde commande. Le téléchargement de l’application sera vérifié avec SHA-256.');
     });
-    document.querySelector('#panel-windows .local-hint').textContent += ' Si votre politique PowerShell bloque les scripts, utilisez le ZIP ou l’installateur manuel disponible ci-dessous.';
-    document.querySelector('#install-details').textContent = 'Installation dans votre dossier utilisateur, sans droits administrateur. Paquets vérifiés sur Mac Apple Silicon/Intel, Windows x64 et Ubuntu 22.04 x64. Ils ne disposent pas de signature commerciale Apple/Windows ni de notarisation Apple : les protections de votre système restent actives et peuvent bloquer leur ouverture. Les autres configurations restent à vérifier.';
+    document.querySelector('#panel-windows .local-hint').textContent += ` ${t('Si votre politique PowerShell bloque les scripts, utilisez le ZIP ou l’installateur manuel disponible ci-dessous.')}`;
+    document.querySelector('#install-details').textContent = t('Installation dans votre dossier utilisateur, sans droits administrateur. Paquets vérifiés sur Mac Apple Silicon/Intel, Windows x64 et Ubuntu 22.04 x64. Ils ne disposent pas de signature commerciale Apple/Windows ni de notarisation Apple : les protections de votre système restent actives et peuvent bloquer leur ouverture. Les autres configurations restent à vérifier.');
   }
   for (const os of ['mac', 'windows', 'linux']) {
     document.querySelector(`#command-${os}`).textContent = installationCommand(os, repository);
   }
   document.querySelectorAll('[data-copy]').forEach(button => button.addEventListener('click', async () => {
     const text = document.querySelector(`#command-${button.dataset.copy}`).textContent;
-    try { await navigator.clipboard.writeText(text); button.textContent = 'Copié ✓'; }
-    catch { button.textContent = 'Sélectionnez le texte'; }
-    setTimeout(() => { button.textContent = 'Copier ⧉'; }, 1800);
+    try { await navigator.clipboard.writeText(text); button.textContent = t('Copié ✓'); }
+    catch { button.textContent = t('Sélectionnez le texte'); }
+    setTimeout(() => { appendArrow(button, t('Copier'), '⧉'); }, 1800);
   }));
 
   const tabs = [...document.querySelectorAll('[role="tab"]')];
@@ -118,8 +133,9 @@ async function initialize() {
     tab.addEventListener('click', () => activate(tab));
     tab.addEventListener('keydown', event => {
       let next;
-      if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
-      if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+      const direction = document.documentElement.dir === 'rtl' ? -1 : 1;
+      if (event.key === 'ArrowRight') next = (index + direction + tabs.length) % tabs.length;
+      if (event.key === 'ArrowLeft') next = (index - direction + tabs.length) % tabs.length;
       if (event.key === 'Home') next = 0;
       if (event.key === 'End') next = tabs.length - 1;
       if (next !== undefined) { event.preventDefault(); activate(tabs[next]); tabs[next].focus(); }
@@ -128,6 +144,7 @@ async function initialize() {
   const platform = navigator.userAgentData?.platform ?? navigator.platform ?? '';
   const guess = /Win/i.test(platform) ? 'windows' : /Linux/i.test(platform) ? 'linux' : 'mac';
   activate(document.querySelector(`[data-os="${guess}"]`));
+  document.documentElement.dataset.siteReady = 'true';
 }
 
 if (typeof document !== 'undefined') initialize();

@@ -1,10 +1,16 @@
 # Distribution d’Atelier Photo
 
-Le dépôt public [renaud-bxl/atelier-photo](https://github.com/renaud-bxl/atelier-photo), la [release 0.1.0](https://github.com/renaud-bxl/atelier-photo/releases/tag/v0.1.0) et la [page d’installation](https://renaud-bxl.github.io/atelier-photo/) sont accessibles. GitHub Pages publie le dossier `site/`. Les commandes utilisent les deux scripts de la release stable, qui contient huit paquets applicatifs, les sources natives Linux, ces scripts et `SHA256SUMS`, soit douze fichiers. Aucun paiement PayPal n’a été réalisé.
+Le dépôt public [renaud-bxl/atelier-photo](https://github.com/renaud-bxl/atelier-photo), la [bêta publique 0.1.0](https://github.com/renaud-bxl/atelier-photo/releases/tag/v0.1.0) et la [page d’installation](https://renaud-bxl.github.io/atelier-photo/) sont accessibles. Les commandes utilisent les deux scripts de la release publique, qui contient huit paquets applicatifs, les sources natives Linux, ces scripts et `SHA256SUMS`, soit douze fichiers. Aucun paiement PayPal n’a été réalisé.
 
 ## Page de présentation et don facultatif
 
-`site/` est un site statique autonome, noir et bleu, signé Renaud. Il propose 0 €, 5 €, 10 €, 20 € ou un montant libre en euros avant le guide d’installation. Le choix initial est 0 €. Un montant libre égal à 0 € fonctionne aussi. Le bouton de continuation reste toujours disponible : aucun paiement, compte ni justificatif n’est exigé.
+`site/` contient le modèle HTML, les styles et les catalogues des douze langues du logiciel. Le site est noir et bleu, signé Renaud et porte la mention Bêta. Il propose 0 €, 5 €, 10 €, 20 € ou un montant libre en euros avant le guide d’installation. Le choix initial est 0 €. Un montant libre égal à 0 € fonctionne aussi. Le bouton de continuation reste toujours disponible : aucun paiement, compte ni justificatif n’est exigé.
+
+La version française est à la racine ; les onze autres éditions sont dans `/nl/`, `/en/`, `/es/`, `/zh/`, `/ja/`, `/ar/`, `/de/`, `/pt/`, `/it/`, `/hi/` et `/ko/`. Chacune contient le texte et le mode d’emploi dans son HTML initial, avec langue, sens d’écriture, canonique et liens `hreflang`. L’arabe utilise une présentation de droite à gauche ; les commandes et les adresses conservent leur sens de lecture.
+
+Une image Open Graph PNG de 1 200 × 630 pixels, commune aux langues, présente la marque, la Bêta et les plateformes, sans phrase à traduire. Les titres, descriptions et textes alternatifs OG/Twitter sont localisés. Son nom versionné permet aux réseaux sociaux de récupérer un nouvel asset ; leur cache reste indépendant du déploiement GitHub Pages.
+
+Le mode d’emploi explique le diagnostic et le téléchargement explicite des modèles Ollama, le module génératif ComfyUI et les deux étapes de sauvegarde des clés API. Il renvoie aux consoles et documentations officielles sans demander de secret sur le site. Les commandes et les noms de modèles ne sont pas traduits.
 
 Un montant positif prépare un lien externe `https://www.paypal.com/donate` avec les paramètres `business=renaud2005@gmail.com`, `currency_code=EUR` et `amount` à deux décimales. Le visiteur décide de poursuivre sur PayPal dans un nouvel onglet. L’application n’envoie pas de paiement, n’utilise pas l’API PayPal, ne lit pas de statut de transaction et ne prétend pas vérifier un don. Le bénéficiaire affiché est exactement l’adresse indiquée par Renaud.
 
@@ -12,7 +18,7 @@ Les paramètres sont fondés sur les [variables officielles PayPal Payments Stan
 
 ### Prévisualiser
 
-Depuis la racine du projet, `python3 -m http.server 4174 --bind 127.0.0.1 --directory site` sert la page sur `http://127.0.0.1:4174`. Aucun service tiers, police distante, suivi de visiteur ou SDK de paiement n’est chargé. Un serveur statique est nécessaire pour charger `config.json` et les modules JavaScript ; l’ouverture directe en `file://` n’est pas le mode prévu.
+Depuis la racine du projet, `node scripts/build-site.mjs` produit `site-dist/`, puis `python3 -m http.server 4174 --bind 127.0.0.1 --directory site-dist` sert le site sur `http://127.0.0.1:4174`. La génération utilise seulement Node.js et refuse un catalogue incomplet. Aucun service tiers, police distante, suivi de visiteur ou SDK de paiement n’est chargé. Un serveur statique est nécessaire pour charger `config.json` et les modules JavaScript ; l’ouverture directe en `file://` n’est pas le mode prévu.
 
 ### Configuration de la publication
 
@@ -33,13 +39,15 @@ Il faut publier les scripts **et** les binaires correspondants avant d’activer
 
 ### Publication GitHub Pages
 
-`.github/workflows/pages.yml` publie directement le seul dossier `site/`, sans construction de l’application, installation npm, générateur de site ni clé personnelle. Il se déclenche sur les modifications de `site/**` ou de ce workflow poussées dans `main`, et peut aussi être lancé manuellement depuis `main`. Il utilise l’environnement `github-pages`, les droits `contents: read`, `pages: write` et `id-token: write`, et laisse terminer un déploiement déjà commencé.
+`.github/workflows/pages.yml` génère les douze éditions avec `scripts/build-site.mjs` puis publie uniquement `site-dist/`, sans construire l’application, installer npm ou utiliser une clé personnelle. Il se déclenche sur les modifications de `site/**`, du générateur ou de ce workflow poussées dans `main`, et peut aussi être lancé manuellement depuis `main`. Il utilise l’environnement `github-pages`, les droits `contents: read`, `pages: write` et `id-token: write`, et laisse terminer un déploiement déjà commencé.
 
-Les références vérifiées le 15 octobre 2026 sont [`checkout@v6`](https://github.com/actions/checkout/blob/v6/action.yml), [`configure-pages@v5`](https://github.com/actions/configure-pages/blob/v5/action.yml), [`upload-pages-artifact@v4`](https://github.com/actions/upload-pages-artifact/blob/v4/action.yml) et [`deploy-pages@v5`](https://github.com/actions/deploy-pages/blob/v5/action.yml). Le workflow suit le [mécanisme officiel des workflows Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages). Il n’emploie pas de jeton d’accès personnel : GitHub fournit les autorisations temporaires du job.
+Les références vérifiées le 15 octobre 2026 sont [`checkout@v6`](https://github.com/actions/checkout/blob/v6/action.yml), [`configure-pages@v5`](https://github.com/actions/configure-pages/blob/v5/action.yml), [`setup-node@v6`](https://github.com/actions/setup-node/blob/v6/action.yml), [`upload-pages-artifact@v4`](https://github.com/actions/upload-pages-artifact/blob/v4/action.yml) et [`deploy-pages@v5`](https://github.com/actions/deploy-pages/blob/v5/action.yml). Le générateur utilise Node.js 24 sans dépendance npm. Le workflow suit le [mécanisme officiel des workflows Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages). Il n’emploie pas de jeton d’accès personnel : GitHub fournit les autorisations temporaires du job.
 
 Le dépôt utilise **Pages → Build and deployment → Source → GitHub Actions**. L’option `enablement: false` interdit au workflow d’activer Pages lui-même ; l’activation initiale a été effectuée dans les réglages du dépôt. Le [déploiement du 15 octobre 2026](https://github.com/renaud-bxl/atelier-photo/actions/runs/38767260952) a réussi après cette activation et la page a répondu en HTTPS.
 
 La page affiche maintenant les liens d’installation binaire. Le workflow Pages ne construit et ne publie aucune release de l’application.
+
+La mention Bêta décrit la maturité du logiciel et apparaît sur la page, dans ses métadonnées et dans le titre de la release 0.1.0. Cette release conserve l’alias GitHub `latest` utilisé par les installateurs existants ; cette disponibilité publique ne constitue pas une promesse de stabilité.
 
 ## Installateurs
 

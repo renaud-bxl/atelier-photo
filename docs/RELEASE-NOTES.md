@@ -1,6 +1,8 @@
-# Atelier Photo 0.1.0
+# Atelier Photo 0.1.0 — Bêta publique
 
-Première version publique : un atelier photo indépendant, gratuit et en douze langues, avec une interface noire et bleue. Les dons restent facultatifs, y compris 0 €.
+Version bêta publique : un atelier photo indépendant, gratuit et en douze langues, avec une interface noire et bleue. Les dons restent facultatifs, y compris 0 €.
+
+La [page d’installation et son mode d’emploi](https://renaud-bxl.github.io/atelier-photo/) sont disponibles dans les douze langues du logiciel. Le guide explique comment connecter une IA locale ou les clés API de l’utilisateur. Cette bêta est destinée à recueillir des retours ; ses limites sont détaillées ci-dessous.
 
 - Bibliothèque paginée, sélections, notes, styles et projets non destructifs.
 - Développement RAW à partir des données capteur et traitement RGB16 jusqu’à l’encodage final PNG/TIFF16.

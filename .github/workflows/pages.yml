@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'site/**'
+      - 'scripts/build-site.mjs'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -36,16 +37,24 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: false
+      - name: Use Node.js for the dependency-free website generator
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
       - name: Check the static entry files
         run: |
           test -s site/index.html
           test -s site/style.css
           test -s site/app.js
           test -s site/config.json
+          test -s site/og/atelier-photo-beta-v1.png
+      - name: Build and verify all twelve static language editions
+        run: node scripts/build-site.mjs
       - name: Upload only the static website
         uses: actions/upload-pages-artifact@v4
         with:
-          path: site
+          path: site-dist
           retention-days: 1
       - name: Publish to GitHub Pages
         id: deployment
