@@ -31,6 +31,25 @@ case "$system" in
     platform='linux'; extension='AppImage'
     [ "$machine" = 'x86_64' ] || fail 'Seule la version Linux x64 est préparée ; Linux ARM64 n’est pas validé.'
     architecture='x86_64'
+    command -v awk >/dev/null 2>&1 || fail 'awk est nécessaire.'
+    # The distributed sharp/libvips Linux x64 binaries require SSE4.2.
+    # https://sharp.pixelplumbing.com/install/#prebuilt-binaries
+    cpu_sse42='unknown'
+    if [ -r /proc/cpuinfo ]; then
+      cpu_sse42="$(awk '
+        /^[[:space:]]*flags[[:space:]]*:/ {
+          seen=1; supported=0
+          for (field=1; field<=NF; field++) if ($field=="sse4_2") supported=1
+          if (!supported) missing=1
+        }
+        END { if (!seen) print "unknown"; else if (missing) print "unsupported"; else print "available" }
+      ' /proc/cpuinfo)" || cpu_sse42='unknown'
+    fi
+    case "$cpu_sse42" in
+      unsupported) fail 'Ce processeur ne dispose pas de SSE4.2, nécessaire à cette version Linux x64. Aucun téléchargement effectué.' ;;
+      available) ;;
+      *) printf '%s\n' 'Vérification SSE4.2 indisponible : la compatibilité du processeur reste inconnue.' >&2 ;;
+    esac
     [ -n "$destination" ] || destination="$HOME/.local/opt/atelier-photo"
     command -v sha256sum >/dev/null 2>&1 || fail 'sha256sum est nécessaire.'
     target="$destination/AtelierPhoto.AppImage"

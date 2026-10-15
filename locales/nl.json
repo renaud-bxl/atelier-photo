@@ -622,5 +622,10 @@
   "Mémoire libre mesurée": "Gemeten vrij geheugen",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "Er is weinig vrij geheugen; het systeem kan nog geheugen vrijmaken.",
   "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "De kadrering blijft behouden. Voor portretretouche moet een gezicht zijn gedetecteerd.",
-  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "De beveiligde opslag wordt gecontroleerd wanneer u een sleutel opslaat."
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "De beveiligde opslag wordt gecontroleerd wanneer u een sleutel opslaat.",
+  "Détection des visages : contexte graphique": "Gezichtsdetectie: grafische context",
+  "Vue spatiale : contexte graphique": "Ruimtelijke weergave: grafische context",
+  "Indisponible": "Niet beschikbaar",
+  "Un pilote graphique compatible est nécessaire pour ces fonctions. Les réglages classiques et l’analyse Ollama restent disponibles.": "Voor deze functies is een compatibel grafisch stuurprogramma nodig. Gewone aanpassingen en Ollama-analyse blijven beschikbaar.",
+  "Le pilote graphique actuel ne permet pas la détection des visages.": "Het huidige grafische stuurprogramma ondersteunt geen gezichtsdetectie."
 }

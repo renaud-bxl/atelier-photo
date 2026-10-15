@@ -44,6 +44,35 @@ test('NVIDIA CSV handles quoted names and selects one measured GPU without summi
   for (const invalid of ['', 'NVIDIA-SMI has failed', 'name, memory.total, driver_version', '"unclosed,8192,550.54']) assert.equal(parseNvidiaSMI(invalid).gpu.kind, 'unknown');
 });
 
+test('old or malformed NVIDIA drivers preserve measured hardware without suggesting CUDA', () => {
+  for (const platform of ['linux', 'win32']) for (const driver of ['390.157', '549.99', 'driver600-invalid']) {
+    const result = parseNvidiaSMI(`GeForce GTX 480, 1536, ${driver}`, { platform });
+    assert.equal(result.gpu.name, 'GeForce GTX 480');
+    assert.equal(result.gpu.vramBytes, 1536 * MiB);
+    assert.equal(result.gpu.accelerationHint, null);
+    assert.ok(result.warnings.includes('gpu_backend_unverified'));
+    const assessment = assessLocalModel(hardware({ platform, arch: 'x64', gpu: result.gpu }), model());
+    assert.equal(assessment.status, 'slow');
+    assert.ok(assessment.reasons.includes('cpu_only_slow'));
+  }
+});
+
+test('NVIDIA driver floors distinguish Linux 550 from Windows 551.61 without promising compatibility', async () => {
+  const gpu = (driver, platform) => parseNvidiaSMI(`NVIDIA GeForce RTX 4090, 24576, ${driver}`, { platform }).gpu;
+  assert.equal(gpu('550.54.14', 'linux').accelerationHint, 'cuda');
+  assert.equal(gpu('550.54.14', 'win32').accelerationHint, null);
+  assert.equal(gpu('551.60', 'win32').accelerationHint, null);
+  assert.equal(gpu('551.61', 'win32').accelerationHint, 'cuda');
+  assert.equal(gpu('552.0', 'win32').accelerationHint, 'cuda');
+  const supported = assessLocalModel(hardware({ gpu: gpu('551.61', 'win32') }), model());
+  assert.ok(supported.reasons.includes('gpu_backend_unverified'));
+  for (const platform of ['linux', 'win32']) {
+    const inspect = createHardwareInspector(base({ platform, command: async file => file === 'nvidia-smi' ? 'NVIDIA RTX 4090, 24576, 550.54' : missing() }));
+    const result = await inspect();
+    assert.equal(result.gpu.accelerationHint, platform === 'linux' ? 'cuda' : null, 'The inspector must pass the actual OS to the driver check.');
+  }
+});
+
 test('Windows CIM AdapterRAM is never mistaken for a reliable dedicated VRAM measurement', () => {
   const result = parseWindowsControllers(JSON.stringify([{ Name: 'Intel Iris Xe Graphics', AdapterRAM: 1024 * MiB },
     { Name: 'NVIDIA GeForce RTX 4090', AdapterRAM: 4 * GiB - 1, ConfigManagerErrorCode: 0, PNPDeviceID: 'PRIVATE-ID' }]));
@@ -150,6 +179,20 @@ test('model recommendation uses supplied estimates and a two-download-plus-one-G
   assert.ok(result.reasons.includes('resource_estimates_only')); assert.ok(result.reasons.includes('gpu_backend_unverified'));
   assert.equal(assessLocalModel(hardware({ storage: { freeBytes: 7 * GiB - 1 } }), model()).status, 'insufficient');
   assert.equal(assessLocalModel(hardware({ storage: { freeBytes: 0 } }), model()).status, 'insufficient');
+});
+
+test('Ollama on an Intel Mac remains CPU-only without erasing Metal hardware information', () => {
+  const { gpu } = parseMacDisplays({ SPDisplaysDataType: [{ sppci_model: 'AMD Radeon Pro 5500M', spdisplays_vram: '8 GB', spdisplays_metal: 'Metal 3' }] }, 'x64');
+  const snapshot = hardware({ platform: 'darwin', arch: 'x64', gpu });
+  const before = structuredClone(snapshot);
+  const result = assessLocalModel(snapshot, model());
+  assert.equal(result.status, 'slow');
+  assert.ok(result.reasons.includes('cpu_only_slow'));
+  assert.deepEqual(snapshot, before, 'An engine-specific assessment must not change the measured GPU.');
+  assert.equal(snapshot.gpu.accelerationHint, 'metal');
+  const apple = assessLocalModel(hardware({ platform: 'darwin', arch: 'arm64', gpu: { kind: 'unified', name: 'Apple M3', vramBytes: null, accelerationHint: 'metal' } }), model());
+  assert.equal(apple.status, 'recommended');
+  assert.ok(apple.reasons.includes('gpu_backend_unverified'));
 });
 
 test('an 8-GiB computer cannot be falsely offered a 20-GiB working model', () => {

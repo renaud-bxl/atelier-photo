@@ -25,13 +25,17 @@ export function normalizeLocalConfig(input={}){
 
 export function engineAssessment(hardware,assessment){
   const reasons=[...assessment.reasons];let unsupported=false;
+  const version=typeof hardware.osVersion==='string'?/^(\d+)\.(\d+)(?:\.(\d+))?(?:$|[-+])/.exec(hardware.osVersion):null;
+  let unverified=!version;
   if(!['darwin','win32','linux'].includes(hardware.platform)||!['arm64','x64'].includes(hardware.arch)){unsupported=true;reasons.push('engine_platform_unsupported');}
-  if(hardware.platform==='darwin'&&hardware.osVersion&&Number(hardware.osVersion.split('.')[0])<14){unsupported=true;reasons.push('engine_os_too_old');}
-  if(hardware.platform==='win32'&&hardware.osVersion){
-    const [major,,build]=hardware.osVersion.split('.').map(Number);
+  if(hardware.platform==='darwin'&&version&&Number(version[1])<14){unsupported=true;reasons.push('engine_os_too_old');}
+  if(hardware.platform==='win32'&&version){
+    const major=Number(version[1]),build=version[3]===undefined?NaN:Number(version[3]);
+    if(!Number.isFinite(build))unverified=true;
     if(major<10||(major===10&&Number.isFinite(build)&&build<19045)){unsupported=true;reasons.push('engine_os_too_old');}
   }
-  return {...assessment,status:unsupported?'insufficient':assessment.status,reasons};
+  if(unverified)reasons.push('engine_os_unverified');
+  return {...assessment,status:unsupported?'insufficient':unverified&&assessment.status!=='insufficient'?'unknown':assessment.status,reasons};
 }
 
 /** Conservative application budgets; they are not vendor-certified minima. */
@@ -46,7 +50,7 @@ export function assessLocalGeneration(hardware,{sourcePixels=0,outputPixels=0}={
 }
 
 /** Measures the chosen model volume, not the application installation volume. */
-export function createLocalDiagnostics({inspect=inspectHardware,environment=process.env,userHome=homedir(),access=fs.access}={}){
+export function createLocalDiagnostics({inspect=inspectHardware,environment=process.env,userHome=homedir(),platform=process.platform,access=fs.access}={}){
   let pending=null,lastKey='',expires=0,inFlight=false;
   const accessible=async path=>{
     let timer;
@@ -56,19 +60,23 @@ export function createLocalDiagnostics({inspect=inspectHardware,environment=proc
   async function hardware(input={}){
     const config=normalizeLocalConfig(input);
     const envPath=environment.OLLAMA_MODELS;
-    const requested=config.modelsDirectory||(typeof envPath==='string'&&isAbsolute(envPath)?envPath:join(userHome,'.ollama','models'));
-    if(pending&&lastKey===requested&&(inFlight||Date.now()<expires))return pending;
-    lastKey=requested;inFlight=true;
+    // The standard Linux service runs as the ollama user, not the desktop user.
+    // A custom service can still use a different volume: only an explicit user
+    // selection confirms which measured directory is relevant to the download.
+    const inferred=platform==='linux'?'/usr/share/ollama/.ollama/models':join(userHome,'.ollama','models');
+    const requested=config.modelsDirectory||(typeof envPath==='string'&&isAbsolute(envPath)?envPath:inferred);
+    const configurationVerified=Boolean(config.modelsDirectory),key=JSON.stringify([requested,configurationVerified]);
+    if(pending&&lastKey===key&&(inFlight||Date.now()<expires))return pending;
+    lastKey=key;inFlight=true;
     pending=(async()=>{
       let existing=requested;
-      // Only the inferred home directory can safely use a parent before a first
-      // installation. A missing configured volume must never measure the system
-      // disk instead (for example after an external drive was disconnected).
+      // An inferred default can measure an existing parent before installation.
+      // A configured or environment volume must never fall back to another disk.
       if(!config.modelsDirectory&&!(typeof envPath==='string'&&isAbsolute(envPath)))for(let depth=0;depth<64;depth++){
         try{await accessible(existing);break;}catch(error){if(error?.code!=='ENOENT')break;const parent=dirname(existing);if(parent===existing)break;existing=parent;}
       }
       const result=await inspect({storagePath:existing});
-      return {...result,storage:{...result.storage,path:requested,measuredPath:existing},
+      return {...result,storage:{...result.storage,path:requested,measuredPath:existing,configurationVerified},
         warnings:[...new Set([...result.warnings,...(!config.modelsDirectory?['model_storage_configuration_unverified']:[])])]};
     })();
     const current=pending;
@@ -77,17 +85,22 @@ export function createLocalDiagnostics({inspect=inspectHardware,environment=proc
   }
   async function recommendations(input={}){
     const snapshot=await hardware(input);
-    return LOCAL_VISION_MODELS.map(model=>({...model,assessment:engineAssessment(snapshot,assessLocalModel(snapshot,model))}));
+    const capacity=confirmedCapacity(snapshot);
+    return LOCAL_VISION_MODELS.map(model=>({...model,assessment:engineAssessment(snapshot,assessLocalModel(capacity,model))}));
   }
   async function checkModel(model,input={},forDownload=false){
     const definition=LOCAL_VISION_MODELS.find(item=>item.id===model);
     const snapshot=await hardware(input);
     if(!definition)return snapshot; // Existing vision models are verified by Ollama; their needs remain unmeasured.
-    let assessment=assessLocalModel(snapshot,definition);
+    let assessment=assessLocalModel(confirmedCapacity(snapshot),definition);
     if(!forDownload)assessment=assessLocalModel({...snapshot,storage:{...snapshot.storage,freeBytes:Number.MAX_SAFE_INTEGER}},definition);
     assessment=engineAssessment(snapshot,assessment);
     if(assessment.status==='insufficient')fail('Les ressources mesurées de cet ordinateur sont insuffisantes pour ce modèle. Choisissez un modèle plus léger.');
     return snapshot;
   }
   return {hardware,recommendations,checkModel};
+}
+
+function confirmedCapacity(snapshot){
+  return snapshot.storage?.configurationVerified===false?{...snapshot,storage:{...snapshot.storage,freeBytes:null}}:snapshot;
 }

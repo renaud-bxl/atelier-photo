@@ -622,5 +622,10 @@
   "Mémoire libre mesurée": "Memoria libera misurata",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "La memoria libera è scarsa; il sistema può ancora recuperare memoria.",
   "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "L’inquadratura viene conservata. Il ritocco dei ritratti richiede un volto rilevato.",
-  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "L’archiviazione sicura verrà verificata quando salverai una chiave."
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "L’archiviazione sicura verrà verificata quando salverai una chiave.",
+  "Détection des visages : contexte graphique": "Rilevamento dei volti: contesto grafico",
+  "Vue spatiale : contexte graphique": "Vista spaziale: contesto grafico",
+  "Indisponible": "Non disponibile",
+  "Un pilote graphique compatible est nécessaire pour ces fonctions. Les réglages classiques et l’analyse Ollama restent disponibles.": "Queste funzioni richiedono un driver grafico compatibile. Le regolazioni classiche e l’analisi con Ollama restano disponibili.",
+  "Le pilote graphique actuel ne permet pas la détection des visages.": "Il driver grafico attuale non consente il rilevamento dei volti."
 }

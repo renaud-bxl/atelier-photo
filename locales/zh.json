@@ -622,5 +622,10 @@
   "Mémoire libre mesurée": "测得的空闲内存",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "空闲内存较少；系统仍可能回收更多内存。",
   "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "保留原有构图。人像修饰需要先检测到人脸。",
-  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "保存密钥时将检查安全存储。"
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "保存密钥时将检查安全存储。",
+  "Détection des visages : contexte graphique": "人脸检测：图形上下文",
+  "Vue spatiale : contexte graphique": "空间视图：图形上下文",
+  "Indisponible": "不可用",
+  "Un pilote graphique compatible est nécessaire pour ces fonctions. Les réglages classiques et l’analyse Ollama restent disponibles.": "这些功能需要兼容的图形驱动程序。常规调整和 Ollama 分析仍然可用。",
+  "Le pilote graphique actuel ne permet pas la détection des visages.": "当前图形驱动程序不支持人脸检测。"
 }

@@ -1,4 +1,5 @@
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
+import { inspectLocalGraphics } from './graphics-capabilities.js';
 
 // The runtime and model are bundled locally. No photo or model request leaves
 // the application's private atelier: protocol.
@@ -124,6 +125,8 @@ function startWorker(api) {
 
   async function initialize() {
     try {
+      // The CPU inference delegate still uploads browser images through WebGL.
+      if (!inspectLocalGraphics().webgl) throw new Error('Le pilote graphique actuel ne permet pas la détection des visages.');
       const fileset = await FilesetResolver.forVisionTasks('atelier://assets/wasm');
       detector = await FaceLandmarker.createFromOptions(fileset, {
         baseOptions: { modelAssetPath: 'atelier://assets/face_landmarker.task', delegate: 'CPU' },

@@ -622,5 +622,10 @@
   "Mémoire libre mesurée": "Measured free memory",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "Free memory is low; the system may still reclaim memory.",
   "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "Framing is preserved. Portrait retouching requires a detected face.",
-  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "Secure storage will be checked when you save a key."
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "Secure storage will be checked when you save a key.",
+  "Détection des visages : contexte graphique": "Face detection: graphics context",
+  "Vue spatiale : contexte graphique": "Spatial view: graphics context",
+  "Indisponible": "Unavailable",
+  "Un pilote graphique compatible est nécessaire pour ces fonctions. Les réglages classiques et l’analyse Ollama restent disponibles.": "These features require a compatible graphics driver. Standard adjustments and Ollama analysis remain available.",
+  "Le pilote graphique actuel ne permet pas la détection des visages.": "The current graphics driver does not support face detection."
 }

@@ -622,5 +622,10 @@
   "Mémoire libre mesurée": "측정된 여유 메모리",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "여유 메모리가 부족하지만 시스템에서 메모리를 추가로 확보할 수 있습니다.",
   "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "구도는 유지됩니다. 인물 보정을 위해서는 얼굴이 감지되어야 합니다.",
-  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "키를 저장할 때 보안 저장소를 확인합니다."
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "키를 저장할 때 보안 저장소를 확인합니다.",
+  "Détection des visages : contexte graphique": "얼굴 감지: 그래픽 컨텍스트",
+  "Vue spatiale : contexte graphique": "공간 보기: 그래픽 컨텍스트",
+  "Indisponible": "사용 불가",
+  "Un pilote graphique compatible est nécessaire pour ces fonctions. Les réglages classiques et l’analyse Ollama restent disponibles.": "이 기능에는 호환되는 그래픽 드라이버가 필요합니다. 일반 조정과 Ollama 분석은 계속 사용할 수 있습니다.",
+  "Le pilote graphique actuel ne permet pas la détection des visages.": "현재 그래픽 드라이버는 얼굴 감지를 지원하지 않습니다."
 }

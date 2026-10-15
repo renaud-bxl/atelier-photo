@@ -71,18 +71,32 @@ function csvLine(line) {
   fields.push(field.trim()); return fields;
 }
 
+function nvidiaDriverMeetsMinimum(version, platform) {
+  if (!/^\d{1,6}(?:\.\d{1,6}){0,3}$/.test(version)) return false;
+  const [major, minor = 0] = version.split('.').map(Number);
+  const [minimumMajor, minimumMinor] = platform === 'win32' ? [551, 61] : [550, 0];
+  return major > minimumMajor || major === minimumMajor && minor >= minimumMinor;
+}
+
 /** nvidia-smi memory.total is MiB, not host RAM. Multiple GPUs are never summed.
- * https://docs.nvidia.com/deploy/nvidia-smi/index.html */
-export function parseNvidiaSMI(input) {
+ * https://docs.nvidia.com/deploy/nvidia-smi/index.html
+ * Ollama's documented driver floors: Linux 550+, Windows 551.61+.
+ * https://docs.ollama.com/gpu https://docs.ollama.com/windows
+ * Passing the floor is only a hint: compute capability and actual backend still
+ * require verification (capabilities 5.0–6.2 require driver 570+).
+ */
+export function parseNvidiaSMI(input, { platform = 'linux' } = {}) {
   if (typeof input !== 'string' || input.length > 262_144) return summary([]);
-  const devices = [];
+  const devices = [], warnings = [];
   for (const line of input.split(/\r?\n/).slice(0, 32)) {
     const fields = csvLine(line);
     if (fields.length !== 3 || !name(fields[0]) || !/\d/.test(fields[2]) || /not found|error|failed/i.test(fields[0])) continue;
     const memory = /^\d+(?:\.\d+)?$/.test(fields[1]) ? positive(Number(fields[1]) * MiB) : null;
-    devices.push({ kind: 'discrete', name: name(fields[0]), vramBytes: memory, accelerationHint: 'cuda' });
+    const driverEligible = nvidiaDriverMeetsMinimum(fields[2], platform);
+    devices.push({ kind: 'discrete', name: name(fields[0]), vramBytes: memory, accelerationHint: driverEligible ? 'cuda' : null });
+    if (!driverEligible) warnings.push('gpu_backend_unverified');
   }
-  return summary(devices);
+  return summary(devices, warnings);
 }
 
 /** AdapterRAM is uint32 and can truncate larger adapters: never use it as capacity.
@@ -149,7 +163,7 @@ async function gpuProfile(deps) {
   }
   if (!['linux', 'win32'].includes(deps.platform)) return { gpu: unknownGPU(), warnings: ['gpu_detection_unavailable'] };
   const nvidia = async () => {
-    try { return parseNvidiaSMI(await deps.command('nvidia-smi', ['--query-gpu=name,memory.total,driver_version', '--format=csv,noheader,nounits'], 3500)); }
+    try { return parseNvidiaSMI(await deps.command('nvidia-smi', ['--query-gpu=name,memory.total,driver_version', '--format=csv,noheader,nounits'], 3500), { platform: deps.platform }); }
     catch { return summary([]); }
   };
   const fallback = async () => {
@@ -214,7 +228,7 @@ export function createHardwareInspector(overrides = {}) {
 /** One local snapshot; no persistence, networking, installation, or backend launch. */
 export const inspectHardware = createHardwareInspector();
 
-/** Recommendation from caller-supplied model estimates, never a runtime guarantee. */
+/** Ollama model estimates, never a runtime guarantee or a generic GPU capability test. */
 export function assessLocalModel(hardware, requirements = {}) {
   const reasons = ['resource_estimates_only']; let insufficient = false, unknown = false, slow = false;
   const download = number(requirements.downloadBytes), working = positive(requirements.estimatedWorkingBytes);
@@ -233,7 +247,11 @@ export function assessLocalModel(hardware, requirements = {}) {
     if (free === null || free > total) { reasons.push('free_memory_unknown'); unknown = true; }
     else if (free < working) { reasons.push('free_memory_low'); slow = true; }
   }
-  const hint = ['metal', 'cuda', 'rocm'].includes(hardware?.gpu?.accelerationHint) ? hardware.gpu.accelerationHint : null;
+  // Intel Macs can expose Metal for graphics or another engine, while Ollama's
+  // supported x86 macOS path is CPU-only. Keep the measured hardware intact.
+  // https://docs.ollama.com/macos
+  const intelMac = hardware?.platform === 'darwin' && hardware?.arch === 'x64';
+  const hint = !intelMac && ['metal', 'cuda', 'rocm'].includes(hardware?.gpu?.accelerationHint) ? hardware.gpu.accelerationHint : null;
   if (hint) reasons.push('gpu_backend_unverified');
   else if (requirements.requiresGPU === true) { reasons.push('gpu_requirement_unverified'); unknown = true; }
   else { reasons.push('cpu_only_slow'); slow = true; }

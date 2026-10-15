@@ -24,6 +24,9 @@ import { renderImage } from '../desktop/image-engine.mjs';
 const root = dirname(dirname(fileURLToPath(import.meta.url))), require = createRequire(import.meta.url);
 const fixtureOnly = process.argv.includes('--check-fixtures');
 const packagedExecutable = process.env.ATELIER_PACKAGED_EXE;
+// Explicit mode for a genuinely unsupported graphics host. The assertion below
+// checks actual contexts; it never turns an arbitrary inference error into PASS.
+const expectNoWebGL = process.env.ATELIER_QA_EXPECT_NO_WEBGL === '1';
 const temporary = await realpath(await mkdtemp(join(tmpdir(), 'atelier-local-ai-qa-')));
 const profile = join(temporary, 'profile'), modelDirectory = join(temporary, 'models'), outputDirectory = join(temporary, 'exports');
 const screenshotDirectory = join(root, 'test-artifacts');
@@ -219,7 +222,8 @@ try {
     for (const key of ['ELECTRON_RUN_AS_NODE', 'OPENAI_API_KEY', 'GEMINI_API_KEY', 'GOOGLE_API_KEY', 'ANTHROPIC_API_KEY', 'CLAUDE_API_KEY', 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy', 'all_proxy', 'NODE_USE_ENV_PROXY']) delete env[key];
     const { _electron } = await import('playwright');
     markStage(packagedExecutable ? 'launch packaged Electron with isolated profile' : 'launch source Electron with isolated profile');
-    application = await _electron.launch({ executablePath: packagedExecutable || require('electron'), args: packagedExecutable ? [] : [root], cwd: root, env, timeout: 30_000, chromiumSandbox: true });
+    const launchArgs = packagedExecutable ? [] : [root];
+    application = await _electron.launch({ executablePath: packagedExecutable || require('electron'), args: launchArgs, cwd: root, env, timeout: 30_000, chromiumSandbox: true });
     assert.equal(await application.evaluate(({ app }) => app.commandLine.hasSwitch('no-sandbox')), false, 'Local AI QA must preserve the Chromium sandbox.');
     markStage('read isolated userData path from main process');
     assert.equal(await application.evaluate(({ app }) => app.getPath('userData')), profile);
@@ -257,6 +261,27 @@ try {
       assert.equal(measurements['Mémoire vive'], expectedRAM, 'The UI must show measured RAM, not an invented preset.');
     }
     assert.ok(measurements['Dossier des modèles'].includes(modelDirectory));
+    const graphics = await page.evaluate(() => {
+      const probe = type => {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext(type);
+        const available = Boolean(gl && !gl.isContextLost());
+        gl?.getExtension('WEBGL_lose_context')?.loseContext();
+        return available;
+      };
+      const webgl2 = probe('webgl2'), webgl1 = probe('webgl');
+      return { webgl: webgl1 || webgl2, webgl2 };
+    });
+    const gpuFeatures = await application.evaluate(({ app }) => app.getGPUFeatureStatus());
+    console.log('ATELIER_QA_GRAPHICS ' + JSON.stringify({ graphics, gpuFeatures, expectNoWebGL }));
+    if (expectNoWebGL) {
+      assert.deepEqual(graphics, { webgl: false, webgl2: false }, 'The degraded test is valid only when both graphics contexts are actually unavailable.');
+      assert.equal(measurements['Détection des visages : contexte graphique'], 'Indisponible');
+      assert.equal(measurements['Vue spatiale : contexte graphique'], 'Indisponible');
+    } else {
+      assert.equal(graphics.webgl, true, 'Normal QA must genuinely support the face detector graphics input.');
+      assert.equal(measurements['Détection des visages : contexte graphique'], 'Compatible');
+    }
     const profileNames = await recommendations.locator('article strong').allTextContents();
     assert.deepEqual(profileNames, ['Qwen3-VL Instruct 2B', 'Qwen3-VL Instruct 4B', 'Qwen3-VL Instruct 8B']);
     await mkdir(screenshotDirectory, { recursive: true });
@@ -283,9 +308,16 @@ try {
     markStage('real IPC analysis, proposal and apply');
     await page.getByTestId('photo-card').first().dblclick();
     await page.locator('.base-image').waitFor({ state: 'visible' });
-    markStage('wait for actual MediaPipe face detection on synthetic gradient');
-    const faces = await page.evaluate(id => window.atelier.detectFaces(id), photoId);
-    assert.equal(faces.faces.length, 0, 'The actual local face detector must find no person in this synthetic gradient.');
+    let detectedFaces = null;
+    if (expectNoWebGL) {
+      markStage('verify explicit unavailable face detection on a machine without graphics support');
+      await assert.rejects(page.evaluate(id => window.atelier.detectFaces(id), photoId), /Le pilote graphique actuel ne permet pas la détection des visages/);
+    } else {
+      markStage('wait for actual MediaPipe face detection on synthetic gradient');
+      const faces = await page.evaluate(id => window.atelier.detectFaces(id), photoId);
+      assert.equal(faces.faces.length, 0, 'The actual local face detector must find no person in this synthetic gradient.');
+      detectedFaces = faces.faces.length;
+    }
     await page.getByRole('button', { name: 'Assistant IA', exact: true }).click();
     await page.getByRole('button', { name: 'Proposer des réglages', exact: true }).click();
     await page.getByLabel('Consigne de retouche IA', { exact: true }).fill('Éclaircis légèrement cette mire synthétique et conserve sa précision.');
@@ -330,16 +362,17 @@ try {
     await settingsHaveNoKeys(page);
     const vault = await readFile(join(profile, 'keys.encrypted.json'), 'utf8').catch(error => error.code === 'ENOENT' ? '{}' : Promise.reject(error));
     assert.deepEqual(JSON.parse(vault), {});
-    await writeFile(join(screenshotDirectory, 'local-ai-proof.json'), JSON.stringify({
+    await writeFile(join(screenshotDirectory, expectNoWebGL ? 'local-ai-proof-no-webgl.json' : 'local-ai-proof.json'), JSON.stringify({
       mode: packagedExecutable ? 'packaged' : 'source', syntheticFixture: true, simulatedOllama: true,
       source: { width: WIDTH, height: HEIGHT, sha256Before: originalHash, sha256After: sourceHashAfter },
       rawModelGeometry: { rotation: contradictoryRecipe.adjustments.rotation, cropRatio: contradictoryRecipe.adjustments.cropRatio, flipHorizontal: contradictoryRecipe.adjustments.flipHorizontal },
       appliedGeometry: Object.fromEntries(['rotation', 'cropRatio', 'cropX', 'cropY', 'flipHorizontal'].map(key => [key, applied.adjustments[key]])),
-      detectedFaces: faces.faces.length, portraitControls: Object.fromEntries(portraitControls.map(key => [key, applied.adjustments[key]])),
+      graphics, gpuFeatures, faceDetection: expectNoWebGL ? 'unavailable_graphics' : 'real_mediapipe',
+      detectedFaces, portraitControls: Object.fromEntries(portraitControls.map(key => [key, applied.adjustments[key]])),
       output: { width: metadata.width, height: metadata.height, depth: metadata.depth, sampledLevelsPerChannel: levelsPerChannel, exactEngineOracle: true },
       cloudKeysPresent: false, externalConnectionAttempts: 0, downloadedModels: 0, requests: requests.map(record => record.path),
     }, null, 2) + '\n');
-    console.log('PASS: isolated local provider without keys; real hardware/OS UI and three profiles; honest absent service; contradictory geometry suppressed and no-face portraits neutralized; PNG16 ' + levelsPerChannel.join('/') + ' levels/channel; original SHA-256 unchanged; no downloads or external connections.');
+    console.log('PASS: isolated local provider without keys; real hardware/OS UI and three profiles; face detection ' + (expectNoWebGL ? 'explicitly unavailable, not simulated as a successful detection' : 'genuinely executed by MediaPipe') + '; honest absent service; contradictory geometry suppressed and portrait controls neutralized; PNG16 ' + levelsPerChannel.join('/') + ' levels/channel; original SHA-256 unchanged; no downloads or external connections.');
   }
 } catch (error) {
   console.error(`[local-ai-qa] failure while: ${stage}: ${error.message}`);

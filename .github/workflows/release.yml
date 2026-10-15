@@ -80,8 +80,10 @@ jobs:
       - name: Exercise final Windows ZIP and installed NSIS including loaded native DLL paths
         if: runner.os == 'Windows'
         run: node scripts/qa-packaged.mjs
-      - name: Exercise the installed Linux DEB with the normal Chromium sandbox
+      - name: Exercise installed Linux DEB and explicit headless graphics limits
         if: runner.os == 'Linux'
+        env:
+          ATELIER_QA_EXPECT_NO_WEBGL: '1'
         run: xvfb-run -a node scripts/qa-packaged.mjs
       - name: Archive matching Linux runtime source for redistribution
         if: runner.os == 'Linux'
@@ -109,6 +111,16 @@ jobs:
             release/AtelierPhoto-*.AppImage
             release/AtelierPhoto-*.deb
             release/AtelierPhoto-Linux-native-sources.tar.xz
+      - name: Preserve synthetic functional QA evidence
+        if: always() && runner.os != 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: functional-qa-${{ matrix.id }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            test-artifacts/local-ai*.json
+            test-artifacts/local-ai*.png
 
   assemble:
     name: Assemble installers and SHA-256 checksums

@@ -622,5 +622,10 @@
   "Mémoire libre mesurée": "الذاكرة الحرة المقاسة",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "الذاكرة الحرة منخفضة؛ قد يظل بإمكان النظام استعادة ذاكرة.",
   "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "يُحافَظ على تأطير الصورة. يتطلب تنقيح الصور الشخصية اكتشاف وجه.",
-  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "سيتم التحقق من التخزين الآمن عند حفظ مفتاح."
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "سيتم التحقق من التخزين الآمن عند حفظ مفتاح.",
+  "Détection des visages : contexte graphique": "اكتشاف الوجوه: سياق الرسومات",
+  "Vue spatiale : contexte graphique": "العرض المكاني: سياق الرسومات",
+  "Indisponible": "غير متاح",
+  "Un pilote graphique compatible est nécessaire pour ces fonctions. Les réglages classiques et l’analyse Ollama restent disponibles.": "تتطلب هذه الميزات برنامج تشغيل رسومات متوافقًا. تظل التعديلات التقليدية والتحليل باستخدام Ollama متاحة.",
+  "Le pilote graphique actuel ne permet pas la détection des visages.": "لا يسمح برنامج تشغيل الرسومات الحالي باكتشاف الوجوه."
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, Download, ExternalLink, FlaskConical, LoaderCircle, RefreshCw } from 'lucide-react';
 import { translate, useLanguage } from './i18n.js';
+import { inspectLocalGraphics } from './graphics-capabilities.js';
 
 const blue = '#7db7ff';
 const card = { display: 'grid', gap: 12, padding: 16, background: '#202329', border: '1px solid #343943', borderRadius: 12, minWidth: 0 };
@@ -26,8 +27,9 @@ export function localDownloadState(hardware, recommendation) {
   if (!recommendation) return { allowed: false, reason: 'model' };
   if (recommendation.assessment?.status === 'insufficient') return { allowed: false, reason: 'assessment' };
   const available = hardware.storage?.freeBytes, required = recommendation.assessment?.requiredDiskBytes;
-  if (Number.isFinite(available) && available >= 0 && Number.isFinite(required) && required > available) return { allowed: false, reason: 'disk' };
-  return { allowed: true, unknown: recommendation.assessment?.status === 'unknown' || !Number.isFinite(available) || available < 0
+  const storageVerified = hardware.storage?.configurationVerified !== false;
+  if (storageVerified && Number.isFinite(available) && available >= 0 && Number.isFinite(required) && required > available) return { allowed: false, reason: 'disk' };
+  return { allowed: true, unknown: !storageVerified || recommendation.assessment?.status === 'unknown' || !Number.isFinite(available) || available < 0
     || !Number.isFinite(required) || required < 0 || !Number.isFinite(hardware.memory?.totalBytes) || hardware.memory.totalBytes <= 0 };
 }
 
@@ -129,7 +131,7 @@ export function LocalAIPanel({ value = {}, onChange }) {
     const options = { modelsDirectory: current.current.modelsDirectory || undefined };
     const results = await Promise.allSettled([invoke('localHardware', options), invoke('localRecommendations', options)]);
     if (!alive.current) return;
-    if (results[0].status === 'fulfilled') setHardware(results[0].value);
+    if (results[0].status === 'fulfilled') setHardware({ ...results[0].value, graphics: inspectLocalGraphics() });
     if (results[1].status === 'fulfilled') setRecommendations(Array.isArray(results[1].value) ? results[1].value : []);
     const failure = results.find(result => result.status === 'rejected');
     if (failure) throw failure.reason;
@@ -200,7 +202,10 @@ export function LocalAIPanel({ value = {}, onChange }) {
         <dt>Mémoire graphique</dt><dd style={{ margin: 0 }}>{bytes(hardware.gpu?.vramBytes)}</dd>
         <dt>Espace disponible</dt><dd style={{ margin: 0 }}>{bytes(hardware.storage?.freeBytes)}</dd>
         <dt>Dossier des modèles</dt><dd dir="ltr" style={{ margin: 0, overflowWrap: 'anywhere' }}>{hardware.storage?.path || translate('Information indisponible')}</dd>
+        <dt>Détection des visages : contexte graphique</dt><dd style={{ margin: 0 }}>{hardware.graphics?.webgl === true ? 'Compatible' : 'Indisponible'}</dd>
+        <dt>Vue spatiale : contexte graphique</dt><dd style={{ margin: 0 }}>{hardware.graphics?.webgl2 === true ? 'Compatible' : 'Indisponible'}</dd>
       </dl>}
+      {hardware?.graphics && (!hardware.graphics.webgl || !hardware.graphics.webgl2) && <p style={muted}>Un pilote graphique compatible est nécessaire pour ces fonctions. Les réglages classiques et l’analyse Ollama restent disponibles.</p>}
       {warnings.map(message => <p style={muted} key={message}>{translate(message)}</p>)}
       <div style={row}><button type="button" className="secondary" onClick={chooseDirectory} disabled={Boolean(busy)}>Choisir le dossier des modèles</button></div>
       {value.modelsDirectory && <p dir="ltr" style={{ ...muted, overflowWrap: 'anywhere' }}>{value.modelsDirectory}</p>}

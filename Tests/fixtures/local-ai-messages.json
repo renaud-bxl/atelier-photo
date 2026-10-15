@@ -115,5 +115,11 @@
   "Mémoire libre mesurée",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.",
   "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.",
-  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé."
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.",
+  "Détection des visages : contexte graphique",
+  "Vue spatiale : contexte graphique",
+  "Indisponible",
+  "Un pilote graphique compatible est nécessaire pour ces fonctions. Les réglages classiques et l’analyse Ollama restent disponibles.",
+  "Le pilote graphique actuel ne permet pas la détection des visages.",
+  "Compatible"
 ]

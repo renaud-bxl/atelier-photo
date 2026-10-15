@@ -53,6 +53,21 @@ test('un profil CPU lent reste utilisable et une mesure inconnue reste prudente'
   assert.equal(state.unknown, true);
 });
 
+test('un volume non confirmé ne prouve ni une pénurie ni une capacité disque suffisante', () => {
+  const model = recommendation(hardware);
+  for (const freeBytes of [GiB, 200 * GiB]) {
+    const unverified = { ...hardware, storage: { path: '/home/user/.ollama/models', freeBytes, configurationVerified: false } };
+    const state = helpers.localDownloadState(unverified, model);
+    assert.equal(state.allowed, true, `unconfirmed disk measurement: ${freeBytes}`);
+    assert.equal(state.unknown, true, 'even a comfortable reading may measure the wrong volume');
+  }
+  const confirmed = { ...hardware, storage: { freeBytes: GiB, configurationVerified: true } };
+  assert.equal(helpers.localDownloadState(confirmed, model).allowed, false);
+  assert.equal(helpers.localDownloadState(confirmed, model).reason, 'disk');
+  const lowRAM = { ...hardware, memory: { totalBytes: 4 * GiB, freeBytes: GiB }, storage: { freeBytes: 200 * GiB, configurationVerified: false } };
+  assert.equal(helpers.localDownloadState(lowRAM, recommendation(lowRAM)).allowed, false, 'confirmed RAM shortage remains blocking');
+});
+
 test('les explications distinguent estimation, lenteur, mémoire partagée et incompatibilité', () => {
   assert.equal(helpers.reasonText('resource_estimates_only'), 'Ces recommandations sont des estimations ; testez le modèle sur cet ordinateur.');
   assert.equal(helpers.reasonText('storage_below_required'), 'L’espace disponible est insuffisant pour ce modèle.');
@@ -100,7 +115,40 @@ test('ouvrir la carte n’installe rien, ne télécharge rien et ne lance pas d�
     }
   });
   assert.ok(calls.includes('onProgress'));
-  assert.ok(!calls.some(name => /localPull|localBenchmark|openLocalInstaller|invoke|fetch/.test(name)));
+  assert.ok(!calls.some(name => /localPull|localBenchmark|openLocalInstaller|invoke|fetch|inspectLocalGraphics/.test(name)));
+});
+
+test('le contexte graphique est sondé après le diagnostic explicite sans modifier le profil Ollama', async () => {
+  let declaration;
+  walk(parsed.program, node => { if (node.type === 'VariableDeclarator' && node.id?.name === 'diagnose') declaration = node; });
+  assert.ok(declaration);
+  const probeCalls = [];
+  walk(parsed.program, node => { if (node.type === 'CallExpression' && node.callee?.name === 'inspectLocalGraphics') probeCalls.push(node); });
+  assert.equal(probeCalls.length, 1, 'no graphics probe at module initialization');
+  assert.ok(probeCalls[0].start > declaration.start && probeCalls[0].end < declaration.end);
+
+  for (const graphics of [{ webgl: false, webgl2: false }, { webgl: true, webgl2: false }, { webgl: true, webgl2: true }]) {
+    let completeHardware;
+    const hardwareResponse = new Promise(resolve => { completeHardware = resolve; });
+    const snapshots = [], receivedRecommendations = [], backendRecommendations = [recommendation(hardware)];
+    let probes = 0;
+    const diagnose = vm.runInNewContext(`(${source.slice(declaration.init.start, declaration.init.end)})`, {
+      operation: async (_name, action) => action(), current: { current: {} }, alive: { current: true },
+      setHardware: value => snapshots.push(value), setRecommendations: value => receivedRecommendations.push(value), setBenchmark: () => {},
+      invoke: name => name === 'localHardware' ? hardwareResponse : Promise.resolve(backendRecommendations),
+      inspectLocalGraphics: () => { probes++; return Object.freeze(graphics); },
+    });
+    assert.equal(probes, 0, 'creating the action must not inspect the browser');
+    const pending = diagnose();
+    assert.equal(probes, 0, 'wait for the requested hardware snapshot before probing graphics');
+    completeHardware(hardware);
+    await pending;
+    assert.equal(probes, 1);
+    assert.equal(snapshots.at(-1).graphics, graphics);
+    assert.equal(snapshots.at(-1).gpu, hardware.gpu, 'browser graphics cannot replace the Ollama GPU profile');
+    assert.equal(snapshots.at(-1).memory, hardware.memory);
+    assert.equal(receivedRecommendations.at(-1), backendRecommendations, 'browser blocklisting cannot downgrade Ollama recommendations');
+  }
 });
 
 test('tous les messages de la carte et des parcours locaux existent dans les douze langues', () => {

@@ -622,5 +622,10 @@
   "Mémoire libre mesurée": "Gemessener freier Arbeitsspeicher",
   "La mémoire libre est basse ; le système peut encore récupérer de la mémoire.": "Es ist wenig Arbeitsspeicher frei; das System kann möglicherweise noch Speicher freigeben.",
   "Le cadrage est conservé. Les retouches portrait nécessitent un visage détecté.": "Der Bildausschnitt bleibt erhalten. Für die Porträtretusche muss ein Gesicht erkannt worden sein.",
-  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "Der sichere Speicher wird geprüft, wenn Sie einen Schlüssel speichern."
+  "Le stockage sécurisé sera vérifié lorsque vous enregistrerez une clé.": "Der sichere Speicher wird geprüft, wenn Sie einen Schlüssel speichern.",
+  "Détection des visages : contexte graphique": "Gesichtserkennung: Grafikkontext",
+  "Vue spatiale : contexte graphique": "Räumliche Ansicht: Grafikkontext",
+  "Indisponible": "Nicht verfügbar",
+  "Un pilote graphique compatible est nécessaire pour ces fonctions. Les réglages classiques et l’analyse Ollama restent disponibles.": "Für diese Funktionen ist ein kompatibler Grafiktreiber erforderlich. Klassische Anpassungen und die Ollama-Analyse bleiben verfügbar.",
+  "Le pilote graphique actuel ne permet pas la détection des visages.": "Der aktuelle Grafiktreiber unterstützt keine Gesichtserkennung."
 }

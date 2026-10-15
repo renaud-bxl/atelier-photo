@@ -9,9 +9,9 @@ const volume = join(tmpdir(), 'atelier-diagnostics-invented');
 const snapshot = (patch = {}) => ({ platform: 'linux', arch: 'x64', osVersion: '6.8.0', cpu: { name: 'Synthetic CPU', cores: 4 },
   memory: { totalBytes: 16 * GiB, freeBytes: 12 * GiB }, storage: { freeBytes: 100 * GiB, path: volume },
   gpu: { kind: 'unknown', name: null, vramBytes: null, accelerationHint: null }, warnings: [], ...patch });
-function fixture({ present = [volume], data = snapshot(), environment = {}, inspect } = {}) {
+function fixture({ present = [volume], data = snapshot(), environment = {}, inspect, platform = process.platform } = {}) {
   const calls = [];
-  const diagnostics = createLocalDiagnostics({ environment, userHome: volume, access: async path => { if (!present.includes(path)) throw Object.assign(new Error('ENOENT'),{code:'ENOENT'}); },
+  const diagnostics = createLocalDiagnostics({ environment, userHome: volume, platform, access: async path => { if (!present.includes(path)) throw Object.assign(new Error('ENOENT'),{code:'ENOENT'}); },
     inspect: inspect || (async options => { calls.push(options); return { ...data, storage: { ...data.storage, path: options.storagePath } }; }) });
   return { diagnostics, calls };
 }
@@ -40,6 +40,7 @@ test('measurement uses the selected models volume and does not create a director
   const measured = await diagnostics.hardware({ modelsDirectory: requested });
   assert.deepEqual(calls, [{ storagePath: requested }]); assert.equal(measured.storage.path, requested); assert.equal(measured.storage.measuredPath, requested);
   assert.ok(!measured.warnings.includes('model_storage_configuration_unverified'));
+  assert.equal(measured.storage.configurationVerified, true);
 });
 
 test('environment models directory is measured while its configuration stays explicitly unverified', async () => {
@@ -48,10 +49,11 @@ test('environment models directory is measured while its configuration stays exp
   const measured = await diagnostics.hardware();
   assert.deepEqual(calls, [{ storagePath: requested }]); assert.ok(measured.warnings.includes('model_storage_configuration_unverified'));
   assert.equal(measured.storage.path, requested);
+  assert.equal(measured.storage.configurationVerified, false);
 });
 
 test('a fresh default home directory can measure its future model volume without creating it', async () => {
-  const { diagnostics, calls } = fixture();
+  const { diagnostics, calls } = fixture({ platform: 'darwin' });
   await diagnostics.hardware();
   assert.deepEqual(calls, [{ storagePath: volume }]);
   assert.notEqual(calls[0].storagePath, dirname(volume));
@@ -91,13 +93,13 @@ test('known small vision models reject insufficient RAM before inference or down
 
 test('download checks free storage but an installed model can infer without a second weights allocation', async () => {
   const { diagnostics } = fixture({ data: snapshot({ storage: { freeBytes: GiB }, memory: { totalBytes: 16 * GiB, freeBytes: 8 * GiB } }) });
-  await assert.rejects(diagnostics.checkModel('qwen3-vl:2b-instruct', {}, true), /insuffisantes/);
-  const hardware = await diagnostics.checkModel('qwen3-vl:2b-instruct');
+  await assert.rejects(diagnostics.checkModel('qwen3-vl:2b-instruct', { modelsDirectory: volume }, true), /insuffisantes/);
+  const hardware = await diagnostics.checkModel('qwen3-vl:2b-instruct', { modelsDirectory: volume });
   assert.equal(hardware.storage.freeBytes, GiB);
 });
 
 test('CPU-only machines keep a truthful slow estimate, without requiring a GPU', async () => {
-  const { diagnostics } = fixture(); const list = await diagnostics.recommendations();
+  const { diagnostics } = fixture(); const list = await diagnostics.recommendations({ modelsDirectory: volume });
   assert.equal(list[0].assessment.status, 'slow'); assert.ok(list[0].assessment.reasons.includes('cpu_only_slow'));
   assert.ok(list[0].assessment.reasons.includes('resource_estimates_only'));
   await diagnostics.checkModel(list[0].id);
@@ -108,6 +110,41 @@ test('OS and architecture checks use the correct platform version fields', () =>
   for (const hardware of [{ platform: 'darwin', arch: 'arm64', osVersion: '13.6.0' }, { platform: 'win32', arch: 'x64', osVersion: '10.0.19044' }, { platform: 'linux', arch: 'ia32', osVersion: '6.8' }]) assert.equal(engineAssessment(hardware, base).status, 'insufficient');
   for (const hardware of [{ platform: 'darwin', arch: 'arm64', osVersion: '14.0' }, { platform: 'win32', arch: 'x64', osVersion: '10.0.19045' }, { platform: 'linux', arch: 'arm64', osVersion: '6.8' }]) assert.equal(engineAssessment(hardware, base).status, 'recommended');
   assert.deepEqual(base.reasons, ['resource_estimates_only']);
+});
+
+test('a missing or malformed system version never becomes a recommended engine', () => {
+  const base = { status: 'recommended', reasons: ['resource_estimates_only'] };
+  for (const hardware of [{ platform: 'darwin', arch: 'arm64', osVersion: null }, { platform: 'win32', arch: 'x64', osVersion: '10.0' }, { platform: 'linux', arch: 'x64', osVersion: 'unknown' }]) {
+    const result = engineAssessment(hardware, base);
+    assert.equal(result.status, 'unknown'); assert.ok(result.reasons.includes('engine_os_unverified'));
+    assert.equal(engineAssessment(hardware, { ...base, status: 'insufficient' }).status, 'insufficient');
+  }
+});
+
+test('Linux default targets the standard service directory without treating it as confirmed server configuration', async () => {
+  const directory = '/usr/share/ollama/.ollama/models';
+  const { diagnostics, calls } = fixture({ platform: 'linux', present: [directory], data: snapshot({ gpu: { kind: 'discrete', accelerationHint: 'cuda' } }) });
+  const measured = await diagnostics.hardware();
+  assert.deepEqual(calls, [{ storagePath: directory }]);
+  assert.equal(measured.storage.path, directory); assert.equal(measured.storage.configurationVerified, false);
+  const models = await diagnostics.recommendations();
+  assert.equal(models[0].assessment.status, 'unknown'); assert.ok(models[0].assessment.reasons.includes('storage_unknown'));
+});
+
+test('confirming an inferred directory invalidates its cached unverified assessment', async () => {
+  const directory = join(volume, '.ollama', 'models');
+  const { diagnostics, calls } = fixture({ platform: 'darwin', present: [directory], data: snapshot({ gpu: { kind: 'discrete', accelerationHint: 'cuda' } }) });
+  assert.equal((await diagnostics.recommendations())[0].assessment.status, 'unknown');
+  assert.equal((await diagnostics.recommendations({ modelsDirectory: directory }))[0].assessment.status, 'recommended');
+  assert.equal(calls.length, 2);
+});
+
+test('an unverified environment directory never proves that the real model volume has enough or insufficient disk', async () => {
+  for (const freeBytes of [GiB, 100 * GiB]) {
+    const { diagnostics } = fixture({ environment: { OLLAMA_MODELS: volume }, data: snapshot({ storage: { freeBytes }, gpu: { kind: 'discrete', accelerationHint: 'cuda' } }) });
+    assert.equal((await diagnostics.recommendations())[0].assessment.status, 'unknown');
+    await diagnostics.checkModel('qwen3-vl:2b-instruct', {}, true);
+  }
 });
 
 test('a slow native diagnostic stays deduplicated after the completed-result TTL', async () => {
